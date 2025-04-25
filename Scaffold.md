@@ -7,19 +7,18 @@
 
 ## Directory Structure
 
-```
 EVEBot/
 ├── src/
 │   ├── bot_core.py       # version: 0.3.0 | path: src/bot_core.py
 │   ├── env.py            # version: 0.3.0 | path: src/env.py
 │   ├── agent.py          # version: 0.3.0 | path: src/agent.py
-│   ├── ocr.py            # version: 0.2.0 | path: src/ocr.py
-│   ├── cv.py             # version: 0.2.0 | path: src/cv.py
-│   └── ui.py             # version: 0.2.0 | path: src/ui.py
-├── requirements.txt      # version: 0.3.0 | path: requirements.txt
-└── README.md             # version: 0.3.0 | path: README.md
-```
-
+│   ├── ocr.py            # version: 0.3.2 | path: src/ocr.py
+│   ├── cv.py             # version: 0.3.2 | path: src/cv.py
+│   ├── ui.py             # version: 0.3.6 | path: src/ui.py
+│   ├── capture_utils.py  # version: 0.1.0 | path: src/capture_utils.py
+│   └── roi_capture.py    # version: 0.1.6 | path: src/roi_capture.py
+├── requirements.txt      # version: 0.4.0 | path: requirements.txt
+└── README.md             # version: 0.4.0 | path: README.md
 ---
 
 ## Demo AI Pilot Code

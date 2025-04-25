@@ -1,0 +1,2 @@
+python run_start.py --train --timesteps 50000
+python run_start.py --test --model_path name_model
