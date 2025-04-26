@@ -6,34 +6,24 @@
 ---
 
 ## Directory Structure
-
-<<<<<<< HEAD
-=======
 ```
->>>>>>> origin/main
 EVEBot/
 ├── src/
 │   ├── bot_core.py       # version: 0.3.0 | path: src/bot_core.py
 │   ├── env.py            # version: 0.3.0 | path: src/env.py
-│   ├── agent.py          # version: 0.3.0 | path: src/agent.py
-<<<<<<< HEAD
+│   ├── agent.py          # version: 0.1.0 | path: src/agent.py
 │   ├── ocr.py            # version: 0.3.2 | path: src/ocr.py
 │   ├── cv.py             # version: 0.3.2 | path: src/cv.py
 │   ├── ui.py             # version: 0.3.6 | path: src/ui.py
 │   ├── capture_utils.py  # version: 0.1.0 | path: src/capture_utils.py
 │   └── roi_capture.py    # version: 0.1.6 | path: src/roi_capture.py
+├── run_start.py          # version: 0.2.0 | path: run_start.py
+├── data_recorder.py      # version: 0.3.0 | path: data_recorder.py
+├── pretrain_model.py     # version: 0.1.0 | path: pretrain_model.py
 ├── requirements.txt      # version: 0.4.0 | path: requirements.txt
-└── README.md             # version: 0.4.0 | path: README.md
-=======
-│   ├── ocr.py            # version: 0.2.0 | path: src/ocr.py
-│   ├── cv.py             # version: 0.2.0 | path: src/cv.py
-│   └── ui.py             # version: 0.2.0 | path: src/ui.py
-├── requirements.txt      # version: 0.3.0 | path: requirements.txt
-└── README.md             # version: 0.3.0 | path: README.md
-```
+├── README.md             # version: 0.4.1 | path: README.md
 
->>>>>>> origin/main
----
+```
 
 ## Demo AI Pilot Code
 
@@ -233,15 +223,47 @@ class EveBot:
 
 ---
 
-## Milestones
+## Recent Changes Summary
 
-- **M1 (1w):** Repo init & scaffold.
-- **M2 (2w):** OCR integration.
-- **M3 (3w):** CV model & template matching.
-- **M4 (2w):** Gym env & Behavior Cloning.
-- **M5 (3w):** RL fine-tuning & integration.
-- **M6 (1w):** Testing, optimization, docs.
+- **UI Module Enhancements**:
+  - Randomized delays and jitter for human-like behavior.
+  - Integrated `RegionHandler` for ROI management.
+- **ROI Capture Utilities**:
+  - Persistent preview saving.
+  - Input validation for coordinates and region names.
+  - Backup handling for YAML files.
+  - List and delete ROI functionality.
+- **Modularization**:
+  - Screen capture separated into `capture_utils.py`.
+  - ROI capture and validation logic moved to `roi_capture.py`.
+- **Data Recording & Pretraining**:
+  - `data_recorder.py` allows manual/automatic action logging.
+  - `pretrain_model.py` for behavior cloning from recorded data.
+  - Placeholder `agent.py` for PPO model management.
+  - `bot_core.py` central bot loop connecting all modules.
 
+---
+
+## OpenAI Gym Wrapper for EVE UI
+
+- **Environment**: `EveEnv` wraps EVE Online's UI as a Gym-compatible environment.
+- **Observation Space**: Combination of OCR-extracted text embeddings and CV-detected element positions.
+- **Action Space**: Discrete actions mapped to UI commands (clicks, keypresses).
+- **Rewards**: Defined by ISK gains, successful actions, and safety metrics.
+- **Episodes**: Structured around task completion, e.g., mining cycles or combat engagements.
+- **Training Flow**:
+  - Behavior Cloning with recorded demonstrations.
+  - PPO Fine-tuning using stable-baselines3.
+  - Model export for inference-driven bot control.
+
+---
+
+## Next Steps
+
+- Integration testing of new ROI and UI functionality.
+- Complete agent module with decision logic.
+- Expand Gym environment for complex mission scenarios.
+- Automate model loading and smart action recording.
 ---
 
 ## Requirements
