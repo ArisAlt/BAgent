@@ -1,106 +1,135 @@
-# version: 0.1.6
+# version: 0.1.8
 # path: src/roi_capture.py
 
-import pyautogui
 import yaml
 import os
-from PIL import ImageGrab
+import shutil
+import cv2
+from src.capture_utils import capture_screen
 
 class RegionHandler:
-    def load(self, region_name, yaml_path='regions.yaml'):
-        with open(yaml_path, 'r') as f:
-            regions = yaml.safe_load(f)
-        region = regions.get(region_name)
+    def __init__(self, yaml_path='regions.yaml', backup_dir='regions_backup', preview_dir='previews'):
+        self.yaml_path = yaml_path
+        self.backup_dir = backup_dir
+        self.preview_dir = preview_dir
+        os.makedirs(self.backup_dir, exist_ok=True)
+        os.makedirs(self.preview_dir, exist_ok=True)
+        if not os.path.exists(self.yaml_path):
+            with open(self.yaml_path, 'w') as f:
+                yaml.safe_dump({}, f)
+
+    def load(self, name):
+        regions = self._load_all()
+        return regions.get(name)
+
+    def get_coords(self, name):
+        region = self.load(name)
         if region:
-            loaded_region = (region['x'], region['y'], region['x'] + region['width'], region['y'] + region['height'])
-            print(f"Loaded region '{region_name}': {loaded_region}")
-            return loaded_region
-        else:
-            print(f"Region '{region_name}' not found in {yaml_path}.")
-            return None
+            return (region['x'], region['y'], region['x'] + region['width'], region['y'] + region['height'])
+        return None
 
-    def validate(self, capture_region, save_preview=False, region_name=None, preview_dir='previews'):
-        if capture_region:
-            img = ImageGrab.grab(bbox=capture_region)
-            img.show()
-            print(f"Displayed region {capture_region} for validation.")
-            if save_preview and region_name:
-                os.makedirs(preview_dir, exist_ok=True)
-                preview_path = os.path.join(preview_dir, f"{region_name}.png")
-                img.save(preview_path)
-                print(f"Preview saved to {preview_path}")
-        else:
-            print("No capture region set for validation.")
+    def get_type(self, name):
+        region = self.load(name)
+        return region.get('type') if region else None
 
-    def list_regions(self, yaml_path='regions.yaml'):
-        with open(yaml_path, 'r') as f:
-            regions = yaml.safe_load(f)
-        print("Available Regions:")
-        for name in regions:
-            print(f" - {name}: {regions[name]}")
+    def _load_all(self):
+        with open(self.yaml_path) as f:
+            return yaml.safe_load(f) or {}
 
-    def delete_region(self, region_name, yaml_path='regions.yaml'):
-        with open(yaml_path, 'r') as f:
-            regions = yaml.safe_load(f)
-        if region_name in regions:
-            del regions[region_name]
-            with open(yaml_path, 'w') as f:
+    def list_regions(self):
+        return list(self._load_all().keys())
+
+    def delete_region(self, name):
+        regions = self._load_all()
+        if name in regions:
+            self._backup()
+            del regions[name]
+            with open(self.yaml_path, 'w') as f:
                 yaml.safe_dump(regions, f)
-            print(f"Region '{region_name}' deleted from {yaml_path}.")
+            print(f"Deleted region '{name}'")
         else:
-            print(f"Region '{region_name}' not found in {yaml_path}.")
+            print(f"Region '{name}' not found")
 
-def capture_region_tool(save_path='regions.yaml'):
-    regions = {}
-    print("================= ROI CAPTURE TOOL =================")
-    print("Instructions:")
-    print("1. Move your mouse to the top-left corner of the desired region.")
-    print("2. Press Enter to record the top-left corner.")
-    print("3. Move your mouse to the bottom-right corner of the desired region.")
-    print("4. Press Enter to record the bottom-right corner.")
-    print("5. Enter a name for the region (alphanumeric, underscores allowed).")
-    print("6. Recommended Regions to Capture:")
-    print("   - overview_panel")
-    print("   - mining_lasers")
-    print("   - cargo_hold")
-    print("   - system_status")
-    print("   - hostile_warning")
-    print("   - chat_window")
-    print("7. Repeat or quit when done.")
-    print("====================================================")
+    def save_region(self, name, coords, rtype):
+        regions = self._load_all()
+        if not name.isidentifier():
+            print("Invalid name. Use alphanumeric and underscores only.")
+            return
+        regions[name] = {
+            'x': coords[0], 'y': coords[1],
+            'width': coords[2] - coords[0], 'height': coords[3] - coords[1],
+            'type': rtype
+        }
+        self._backup()
+        with open(self.yaml_path, 'w') as f:
+            yaml.safe_dump(regions, f, default_flow_style=False)
+        print(f"Saved region '{name}' ({rtype}): {coords}")
 
-    if os.path.exists(save_path):
-        with open(save_path, 'r') as f:
-            regions = yaml.safe_load(f) or {}
+    def _backup(self):
+        if os.path.exists(self.yaml_path):
+            shutil.copy(self.yaml_path, os.path.join(self.backup_dir, os.path.basename(self.yaml_path)))
+
+    def preview(self, name):
+        region = self.load(name)
+        if not region:
+            print(f"Region '{name}' not defined")
+            return
+        coords = self.get_coords(name)
+        img = capture_screen()
+        x1, y1, x2, y2 = coords
+        roi = img[y1:y2, x1:x2]
+        preview_path = os.path.join(self.preview_dir, f"{name}.png")
+        cv2.imwrite(preview_path, roi)
+        print(f"Preview saved to {preview_path}")
+
+
+def capture_region_tool():
+    handler = RegionHandler()
+    recommended = [
+        'mining_lasers', 'cargo_hold', 'hostile_warning',
+        'station_warp', 'dock_button', 'undock_button', 'overview_panel',
+        'asteroid_field', 'asteroid_entry', 'approach_button',
+        'shield_status', 'armor_status', 'capacitor_status',
+        'module_slot1_status', 'module_slot2_status', 'module_slot3_status'
+    ]
+    print("=== ROI Capture Tool ===")
+    print("Recommended regions:")
+    for name in recommended:
+        print(f"  - {name}")
+    print("Commands:")
+    print("  capture <region_name>")
+    print("  list")
+    print("  delete <region_name>")
+    print("  preview <region_name>")
+    print("  exit")
+    print("Note: capture will prompt for region type (click/text/detect)")
 
     while True:
-        print(f"Move to top-left of region and press Enter")
-        input()
-        x1, y1 = pyautogui.position()
-        print(f"Top-left at: ({x1}, {y1})")
-        print(f"Move to bottom-right of region and press Enter")
-        input()
-        x2, y2 = pyautogui.position()
-        print(f"Bottom-right at: ({x2}, {y2})")
-        if x2 <= x1 or y2 <= y1:
-            print("Invalid coordinates: bottom-right must be greater than top-left. Try again.")
+        cmd = input("roi> ").strip().split()
+        if not cmd:
             continue
-        name = input("Enter region name: ")
-        if not name.isidentifier():
-            print("Invalid name: must be alphanumeric with optional underscores. Try again.")
-            continue
-        if name in regions:
-            print(f"Region '{name}' already exists and will be overwritten.")
-        regions[name] = {'x': x1, 'y': y1, 'width': x2 - x1, 'height': y2 - y1}
-        cont = input("Capture another region? (y/n): ")
-        if cont.lower() != 'y':
+        action = cmd[0].lower()
+        if action == 'capture' and len(cmd) == 2:
+            name = cmd[1]
+            rtype = input("Enter region type (click/text/detect): ").strip().lower()
+            if rtype not in ('click', 'text', 'detect'):
+                print("Invalid type. Choose click, text, or detect.")
+                continue
+            print(f"Select region for '{name}' ({rtype}), then press ENTER...")
+            coords = capture_screen(select_region=True)
+            if coords:
+                handler.save_region(name, coords, rtype)
+        elif action == 'list':
+            for r in handler.list_regions():
+                print(f" - {r}")
+        elif action == 'delete' and len(cmd) == 2:
+            handler.delete_region(cmd[1])
+        elif action == 'preview' and len(cmd) == 2:
+            handler.preview(cmd[1])
+        elif action == 'exit':
             break
+        else:
+            print("Unknown command")
 
-    if os.path.exists(save_path):
-        backup_path = save_path + '.bak'
-        os.rename(save_path, backup_path)
-        print(f"Backup of previous regions saved to {backup_path}")
-
-    with open(save_path, 'w') as f:
-        yaml.safe_dump(regions, f, default_flow_style=False)
-    print(f"Regions saved to {save_path}")
+if __name__ == '__main__':
+    capture_region_tool()

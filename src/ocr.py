@@ -1,20 +1,36 @@
-# version: 0.3.2
+# version: 0.3.4
 # path: src/ocr.py
 
 import numpy as np
-from paddleocr import PaddleOCR
-from PIL import Image
+from PIL import Image, ImageGrab
 import threading
 import queue
 
+# Attempt to import PaddleOCR, handle all import errors
+try:
+    from paddleocr import PaddleOCR
+    _has_paddle = True
+except Exception:
+    _has_paddle = False
+
 class OcrEngine:
-    def __init__(self, use_angle_cls=True, lang='en'):
+    def __init__(self, use_angle_cls=True, lang='en', use_paddle=True):
         """
-        Initialize the PaddleOCR engine.
-        :param use_angle_cls: Enable angle classification.
-        :param lang: Language for OCR model, e.g., 'en' or 'ch'.
+        Initialize OCR engine: try PaddleOCR if available and requested, else use pytesseract.
         """
-        self.ocr = PaddleOCR(use_angle_cls=use_angle_cls, lang=lang)
+        self.use_paddle = use_paddle and _has_paddle
+        if self.use_paddle:
+            self.ocr = PaddleOCR(use_angle_cls=use_angle_cls, lang=lang)
+        # Dynamically import pytesseract to avoid pandas import at top-level
+        try:
+            import pytesseract
+            self.pytesseract = pytesseract
+            # configure tesseract executable path as needed
+            self.pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+            self.has_tesseract = True
+        except Exception:
+            self.has_tesseract = False
+        # Setup threading queues
         self.task_queue = queue.Queue()
         self.result_queue = queue.Queue()
         self.worker_thread = threading.Thread(target=self._process_queue)
@@ -23,93 +39,67 @@ class OcrEngine:
 
     def extract_text(self, img):
         """
-        Extract text from an image using PaddleOCR.
-        :param img: Input image as a numpy array or PIL Image.
-        :return: Concatenated text string extracted from the image.
+        Extract text from image using selected OCR engine.
         """
-        if isinstance(img, Image.Image):
-            img = np.array(img)
-
-        result = self.ocr.ocr(img, cls=True)
-        lines = []
-        for line in result[0]:
-            text, confidence = line[1][0], line[1][1]
-            if confidence > 0.5:
-                lines.append(text)
-        return '\n'.join(lines)
-
-    def extract_text_with_boxes(self, img):
-        """
-        Extract text along with bounding boxes.
-        :param img: Input image as a numpy array or PIL Image.
-        :return: List of dicts: [{'text': str, 'confidence': float, 'box': list}]
-        """
-        if isinstance(img, Image.Image):
-            img = np.array(img)
-
-        result = self.ocr.ocr(img, cls=True)
-        output = []
-        for line in result[0]:
-            box, (text, confidence) = line[0], line[1]
-            if confidence > 0.5:
-                output.append({'text': text, 'confidence': confidence, 'box': box})
-        return output
+        if isinstance(img, np.ndarray):
+            pil_img = Image.fromarray(img)
+        else:
+            pil_img = img
+        # Use PaddleOCR if available
+        if self.use_paddle:
+            arr = np.array(pil_img)
+            result = self.ocr.ocr(arr, cls=True)
+            lines = []
+            for line in result[0]:
+                text, conf = line[1]
+                if conf > 0.5:
+                    lines.append(text)
+            return '\n'.join(lines)
+        # Fallback to pytesseract if available
+        if self.has_tesseract:
+            return self.pytesseract.image_to_string(pil_img)
+        # No OCR available
+        return ""
 
     def extract_text_batch(self, images):
         """
-        Extract text from a batch of images using PaddleOCR.
-        :param images: List of images (numpy arrays or PIL Images).
-        :return: List of text results for each image.
+        Sequential batch OCR.
         """
-        results = []
-        for img in images:
-            results.append(self.extract_text(img))
-        return results
+        return [self.extract_text(img) for img in images]
 
     def extract_text_batch_threaded(self, images):
         """
-        Extract text from a batch of images using multi-threading.
-        :param images: List of images (numpy arrays or PIL Images).
-        :return: List of text results for each image.
+        Threaded batch OCR.
         """
         results = [None] * len(images)
-
-        def worker(idx, img):
-            results[idx] = self.extract_text(img)
-
+        def worker(idx, image):
+            results[idx] = self.extract_text(image)
         threads = []
-        for idx, img in enumerate(images):
-            thread = threading.Thread(target=worker, args=(idx, img))
-            threads.append(thread)
-            thread.start()
-
-        for thread in threads:
-            thread.join()
-
+        for idx, image in enumerate(images):
+            t = threading.Thread(target=worker, args=(idx, image))
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
         return results
 
     def queue_image_for_processing(self, img):
         """
-        Add an image to the processing queue.
-        :param img: Image to process.
+        Queue image for async OCR.
         """
         self.task_queue.put(img)
 
     def get_processed_result(self):
         """
-        Retrieve the next processed result from the result queue.
-        :return: OCR result or None if no result is available.
+        Retrieve next async OCR result.
         """
         if not self.result_queue.empty():
             return self.result_queue.get()
         return None
 
     def _process_queue(self):
-        """
-        Internal method to process the OCR task queue in a background thread.
-        """
         while True:
             img = self.task_queue.get()
-            result = self.extract_text(img)
-            self.result_queue.put(result)
+            text = self.extract_text(img)
+            self.result_queue.put(text)
             self.task_queue.task_done()
