@@ -1,0 +1,75 @@
+# version: 0.1.0
+# path: config/agent_config.yaml
+
+# Configuration for AIPilot: thresholds, ROI names, modules, and saved locations.
+
+mining:
+  # ROI name to click for a selected asteroid
+  asteroid_roi: asteroid_entry
+  # Overview tab name for mining (if UI supports tab switching)
+  overview_tab: mining
+  # Number of mining modules equipped and their hotkeys
+  mining_modules:
+    count: 3
+    hotkeys: [F1, F2, F3]
+  # Percentage of cargo fill at which to return to station
+  cargo_threshold: 90
+
+# Docking and station interaction parameters
+docking:
+  # Distance (in meters) at which to switch from approach to dock
+  distance_threshold: 2000
+  station:
+    # ROI names for station approach, dock, and undock buttons
+    approach_roi: approach_button
+    dock_roi: dock_button
+    undock_roi: undock_button
+  # Optionally specify a saved station location (for advanced warp navigation)
+  saved_station:
+    name: Jita_V
+    # Example bookmarks or coordinates, to be handled by navigation module
+    coordinates: [200000, -150000, 50000]
+
+# Cargo handling and unloading parameters
+cargo:
+  # ROI name for opening cargo window
+  cargo_window_roi: cargo_hold_status
+  # Hotkey for "select all" inside cargo window
+  unload_hotkey: ctrl+a
+  # ROI name for the "Move to Station" context menu
+  menu_roi: move_to_station
+
+# Combat settings (placeholders for future tuning)
+combat:
+  # Modules to activate in combat state
+  activate_modules:
+    - weapon_1
+    - weapon_2
+  # Health threshold (%) to retreat
+  retreat_threshold: 30
+
+# Mission settings (for mission acceptance flows)
+mission:
+  accept_mission_roi: accept_mission_button
+  mission_overview_tab: missions
+
+# Exploration settings (for scan/anomaly workflows)
+exploration:
+  scan_button_roi: scan_button
+  anomaly_window_roi: anomaly_list
+
+# Location bookmarks for docking and mining
+locations:
+  # ROI name for opening the Locations window
+  window_roi: locations_window
+  # Bookmark label for docking station
+  station_bookmark: "0 Station"
+  # Bookmarks for asteroid belts
+  belt_bookmarks:
+    - "1 Belt"
+    - "2 Belt"
+    - "3 Belt"
+    - "4 Belt"
+  # If true, dynamically read available bookmarks and select belts by order
+  dynamic_selection: true
+

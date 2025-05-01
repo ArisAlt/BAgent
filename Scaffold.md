@@ -7,174 +7,77 @@
 
 ## Directory Structure
 ```
+# EVE Online Bot Project Scaffold
+
+> version: 0.4.4  
+> updated: Integrated dynamic ROI types, enhanced env, ROI capture tool, GUI, data recorder, pretraining pipeline
+
+---
+
+## Directory Structure
+
+```
 EVEBot/
 ├── src/
-│   ├── bot_core.py       # version: 0.3.0 | path: src/bot_core.py
-│   ├── env.py            # version: 0.3.0 | path: src/env.py
-│   ├── agent.py          # version: 0.1.0 | path: src/agent.py
-│   ├── ocr.py            # version: 0.3.2 | path: src/ocr.py
-│   ├── cv.py             # version: 0.3.2 | path: src/cv.py
-│   ├── ui.py             # version: 0.3.6 | path: src/ui.py
-│   ├── capture_utils.py  # version: 0.1.0 | path: src/capture_utils.py
-│   └── roi_capture.py    # version: 0.1.6 | path: src/roi_capture.py
-├── run_start.py          # version: 0.2.0 | path: run_start.py
-├── data_recorder.py      # version: 0.3.0 | path: data_recorder.py
-├── pretrain_model.py     # version: 0.1.0 | path: pretrain_model.py
-├── requirements.txt      # version: 0.4.0 | path: requirements.txt
-├── README.md             # version: 0.4.1 | path: README.md
-
-```
-
-## Demo AI Pilot Code
-
-### src/env.py
-
-```python
-# version: 0.3.0
-# path: src/env.py
-
-import gym
-from gym import spaces
-import numpy as np
-from ocr import OcrEngine
-from cv import CvEngine
-from ui import Ui
-
-class EveEnv(gym.Env):
-    """
-    OpenAI Gym wrapper for EVE UI as state-action interface.
-    State: concatenated OCR text embeddings + element positions.
-    Action: discrete commands mapped to UI actions.
-    """
-    def __init__(self, max_actions=20):
-        super().__init__()
-        self.ocr = OcrEngine()
-        self.cv = CvEngine()
-        self.ui = Ui()
-
-        # Example: 100-dimensional state vector
-        obs_dim = 100
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32)
-
-        # Discrete action space: click hotspots or key presses
-        self.action_space = spaces.Discrete(max_actions)
-
-    def reset(self):
-        # Optionally navigate to a start location in-game
-        obs = self._get_obs()
-        return obs
-
-    def step(self, action):
-        # Map discrete action to UI command
-        cmd = self._action_to_command(action)
-        self.ui.execute(cmd)
-
-        obs = self._get_obs()
-        reward = self._compute_reward()
-        done = self._check_done()
-        info = {}
-        return obs, reward, done, info
-
-    def _get_obs(self):
-        img = self.ui.capture()
-        text = self.ocr.extract_text(img)
-        elems = self.cv.detect_elements(img)
-        # Feature engineering: embed text + flatten element coords
-        # (Here: dummy zero vector)
-        return np.zeros(self.observation_space.shape, dtype=np.float32)
-
-    def _action_to_command(self, action):
-        # Define mapping e.g., action 0=click at slot1, 1=press f1, ...
-        # Return dict like {'type':'click','x':100,'y':200}
-        return {'type': 'no-op'}
-
-    def _compute_reward(self):
-        # Example placeholder: reward by positive in-game events
-        return 0.0
-
-    def _check_done(self):
-        # End of episode logic
-        return False
-```
-
-### src/agent.py
-
-```python
-# version: 0.3.0
-# path: src/agent.py
-
-import gym
-import torch
-from stable_baselines3 import PPO
-from stable_baselines3.common.callbacks import CheckpointCallback
-
-class AIPilot:
-    def __init__(self, model_path=None):
-        self.env = gym.make('EveEnv-v0')  # register below
-        if model_path:
-            self.model = PPO.load(model_path, env=self.env)
-        else:
-            # Initialize a new model with MLP policy
-            self.model = PPO('MlpPolicy', self.env, verbose=1)
-
-    def pretrain(self, demo_buffer):
-        """
-        Behavior Cloning on demonstration data.
-        demo_buffer: list of (obs, action).
-        """
-        obs, acts = zip(*demo_buffer)
-        obs = torch.tensor(obs, dtype=torch.float32)
-        acts = torch.tensor(acts, dtype=torch.long)
-        optimizer = torch.optim.Adam(self.model.policy.parameters(), lr=1e-4)
-        for epoch in range(10):
-            dist = self.model.policy.get_distribution(obs)
-            loss = -dist.log_prob(acts).mean()
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-        self.model.save('bc_pretrained')
-
-    def train(self, timesteps=1_000_00):
-        checkpoint = CheckpointCallback(save_freq=10_000, save_path='./', name_prefix='ppo_eve')
-        self.model.learn(total_timesteps=timesteps, callback=checkpoint)
-        self.model.save('ppo_eve_final')
-
-    def decide(self, text_data, elements):
-        obs = self.env._get_obs()
-        action, _ = self.model.predict(obs, deterministic=True)
-        cmd = self.env._action_to_command(action)
-        return cmd
-```
-
-### src/bot_core.py
-
-```python
-# version: 0.3.0
-# path: src/bot_core.py
-
-from agent import AIPilot
-
-class EveBot:
-    def __init__(self, agent=None):
-        from ocr import OcrEngine
-        from cv import CvEngine
-        from ui import Ui
-
-        self.ocr = OcrEngine()
-        self.cv = CvEngine()
-        self.ui = Ui()
-        self.agent = agent or AIPilot()
-
-    def run(self):
-        while True:
-            screenshot = self.ui.capture()
-            text_data = self.ocr.extract_text(screenshot)
-            elements = self.cv.detect_elements(screenshot)
-            action = self.agent.decide(text_data, elements)
-            self.ui.execute(action)
+│   ├── bot_core.py       # version: 0.4.0 | path: src/bot_core.py  
+│   ├── env.py            # version: 0.4.4 | path: src/env.py  
+│   ├── agent.py          # version: 0.1.0 | path: src/agent.py  
+│   ├── ocr.py            # version: 0.3.4 | path: src/ocr.py  
+│   ├── cv.py             # version: 0.3.2 | path: src/cv.py  
+│   ├── ui.py             # version: 0.3.7 | path: src/ui.py  
+│   ├── capture_utils.py  # version: 0.1.0 | path: src/capture_utils.py  
+│   └── roi_capture.py    # version: 0.1.8 | path: src/roi_capture.py  
+├── run_start.py          # version: 0.2.0 | path: run_start.py  
+├── data_recorder.py      # version: 0.3.0 | path: data_recorder.py  
+├── pretrain_model.py     # version: 0.1.1 | path: pretrain_model.py  
+├── test_env.py           # version: 0.1.1 | path: test_env.py  
+├── requirements.txt      # version: 0.4.0 | path: requirements.txt  
+└── README.md             # version: 0.4.1 | path: README.md  
 ```
 
 ---
+
+## Recent Changes Summary
+
+- **Modularization & Tooling:**  
+  - Screen capture (`capture_utils.py`), ROI capture (`roi_capture.py`), GUI in `bot_core.py`.  
+  - Dynamic ROI types (click/text/detect) and auto-generated action space in `env.py`.  
+- **Environment Enhancements:**  
+  - Dynamic ROI loading, text & detection regions, cargo capacity parsing.  
+  - Expanded action set from EVE-Master internal nodes.  
+- **Data & Training Pipeline:**  
+  - `data_recorder.py` supports manual/automatic demo collection.  
+  - `pretrain_model.py` behavior cloning to `bc_pretrained.zip`.  
+  - CLI entry via `run_start.py` and PySide6 GUI support.  
+- **Testing & Validation:**  
+  - `test_env.py` for quick ROI and env step sanity checks.  
+
+---
+
+## Next Steps
+
+1. **Capture & Validate ROIs** for all new regions (use `roi_capture.py`).  
+2. **Template Preparation** for `detect`-type ROIs in `templates/`.  
+3. **Reward Tuning & Logging**: refine `_compute_reward` weights and add metrics.  
+4. **Full Integration Testing**: end-to-end bot run via GUI and CLI.  
+5. **Documentation & Packaging**: finalize README, version bump, and release.  
+
+---
+
+## Requirements
+
+```txt
+pytesseract
+opencv-python
+PySide6
+numpy
+pillow
+pyautogui
+gym
+stable-baselines3
+torch
+```
+
 
 ## Feature List
 
@@ -266,19 +169,5 @@ class EveBot:
 - Automate model loading and smart action recording.
 ---
 
-## Requirements
 
-```txt
-pytesseract
-paddleocr
-opencv-python
-torchvision
-PySide6
-numpy
-pillow
-pyautogui
-gym
-stable-baselines3
-torch
-```
 

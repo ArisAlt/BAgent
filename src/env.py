@@ -4,10 +4,10 @@
 import gym
 from gym import spaces
 import numpy as np
-from src.ocr import OcrEngine
-from src.cv import CvEngine
-from src.ui import Ui
-from src.roi_capture import RegionHandler
+from ocr import OcrEngine
+from cv import CvEngine
+from ui import Ui
+from roi_capture import RegionHandler
 
 class EveEnv(gym.Env):
     def __init__(self, reward_config=None):

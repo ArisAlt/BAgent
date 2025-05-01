@@ -1,38 +1,50 @@
-# version: 0.1.1
-# path: test_env.py
+# test_env.py
+# Quick smoke-test for your ROI definitions and Gym wrapper
 
+import time
 import random
-from src.roi_capture import capture_region_tool, RegionHandler
-from src.env import EveEnv
 
+# Make sure Python can import your modules
+import os, sys
+sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 
-def test_roi_capture():
-    print("--- ROI Capture Tool Test ---")
-    print("Define or verify your regions for click/text/detect.")
-    capture_region_tool()
-    regions = RegionHandler().list_regions()
-    print("Regions defined:")
-    for r in regions:
-        print(f" - {r}")
+from roi_capture import RegionHandler
+from env import EveEnv
 
+def test_rois():
+    """List out all ROIs you’ve previously captured."""
+    rh = RegionHandler()
+    regions = rh.list_regions()
+    if not regions:
+        print("⚠️ No ROIs defined yet. Run your ROI tool first to capture regions.")
+    else:
+        print("✅ Defined ROIs:")
+        for name in regions:
+            print(f"  • {name}")
 
-def test_env_steps(num_steps=5):
-    print("--- Environment Step Test ---")
+def test_env_steps(num_steps: int = 5):
+    """Reset the environment and take a few random actions."""
     env = EveEnv()
     obs = env.reset()
-    print("Initial observation snippet:", obs[:10], "...")
+    print(f"\n[Env] Reset → initial obs snippet: {obs[:5]}…\n")
 
     for i in range(num_steps):
         action = random.randrange(env.action_space.n)
         cmd = env._action_to_command(action)
-        print(f"Step {i+1}: Action {action} => Command: {cmd}")
         obs, reward, done, _ = env.step(action)
-        print(f"Observation snippet: {obs[:5]}..., Reward: {reward}, Done: {done}\n")
+        print(f"Step {i+1}/{num_steps}")
+        print(f"  Action idx: {action}")
+        print(f"  Mapped cmd: {cmd}")
+        print(f"  Reward:      {reward:.2f}")
+        print(f"  Done?        {done}")
+        print(f"  Obs snippet: {obs[:5]}…\n")
         if done:
-            print("Episode done. Resetting environment.")
-            obs = env.reset()
-
+            print("▶️ Episode ended early.")
+            break
+        time.sleep(0.5)
 
 if __name__ == "__main__":
-    test_roi_capture()
+    print("=== ROI Definitions Check ===")
+    test_rois()
+    print("\n=== Environment Step Test ===")
     test_env_steps()

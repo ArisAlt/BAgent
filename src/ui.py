@@ -6,8 +6,8 @@ import numpy as np
 import time
 import threading
 import random
-from src.capture_utils import capture_screen
-from src.roi_capture import RegionHandler
+from capture_utils import capture_screen
+from roi_capture import RegionHandler
 
 class Ui:
     def __init__(self, capture_region=None):
