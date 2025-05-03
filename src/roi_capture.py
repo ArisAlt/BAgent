@@ -109,9 +109,10 @@ def print_menu():
     # Updated recommended regions including new YAML-based ROIs
     recommended = [
         # Core UI panels
-        "overview_panel", "selected_item_window", "module_rack",
+        "overview_panel", "selected_item_window", "High_Modules", "Medium_Modules", "Low_Modules",
+        
         # Ship stats
-        "shield_status", "armor_status", "capacitor_status", "cargo_hold_status",
+        "shield_status", "armor_status", "capacitor_status", "mining_cargo_hold_capacity",
         # Actions
         "dock_button", "undock_button", "warp_button", "approach_button",
         # Modules slots
@@ -129,6 +130,10 @@ def print_menu():
         "scan_button", "anomaly_list", "accept_mission_button", "missions_tab",
         # Locations panel and bookmarks
         "locations_window"
+        #Navigation Information
+        "System_info_panel", 
+        #States and Status"
+        "is_module_active","is_target_locked"
     ]
     print("\nRecommended Regions (from config):")
     for r in recommended:
