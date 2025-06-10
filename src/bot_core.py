@@ -13,6 +13,9 @@ from ocr import OcrEngine
 from cv import CvEngine
 from state_machine import FSM, Event
 from mining_actions import MiningActions
+from env import EveEnv
+from agent import AIPilot
+from ui import Ui
 
 class EveBot:
     def __init__(self, model_path=None):
