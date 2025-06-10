@@ -69,6 +69,7 @@ pyautogui
 gym
 stable-baselines3
 torch
+pyyaml
 ```
 
 
