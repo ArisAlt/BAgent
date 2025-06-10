@@ -59,11 +59,16 @@ BAgent/
 
 ## Next Steps
 
-1. **Capture & Validate ROIs** for all new regions (use `roi_capture.py`).  
-2. **Template Preparation** for `detect`-type ROIs in `templates/`.  
-3. **Reward Tuning & Logging**: refine `_compute_reward` weights and add metrics.  
-4. **Full Integration Testing**: end-to-end bot run via GUI and CLI.  
-5. **Documentation & Packaging**: finalize README, version bump, and release.  
+1. **Capture & Validate ROIs** for all new regions using `roi_capture.py`.
+2. **Template Preparation** for `detect`-type ROIs in `templates/`.
+3. **Reward Tuning & Logging**: refine `_compute_reward` weights and add metrics.
+4. **Complete Agent Module** with decision logic and automated action recording.
+5. **Expand Gym Environment** for complex mission scenarios.
+6. **Full Integration Testing** of ROI/UI functionality via GUI and CLI.
+7. **Fine-tune OCR** with `ocr_finetune.py`.
+8. **Document Windows Setup**: run `add_tesseract_to_path.bat` to add Tesseract to `PATH`.
+9. **Update Tests & Integration** to cover new modules.
+10. **Documentation & Packaging**: finalize README, version bump, and release.
 
 ---
 
@@ -164,13 +169,6 @@ torch
 
 ---
 
-## Next Steps
-
-- Integration testing of new ROI and UI functionality.
-- Complete agent module with decision logic.
-- Expand Gym environment for complex mission scenarios.
-- Automate model loading and smart action recording.
----
 
 
 

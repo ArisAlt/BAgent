@@ -50,4 +50,5 @@ python generate_box_files.py -i training_texts_dir/images -b training_texts_dir/
 ```
 
 If Tesseract is not on your `PATH`, provide the path via `--tesseract-cmd` or
-set the `TESSERACT_CMD` environment variable.
+set the `TESSERACT_CMD` environment variable. Windows users can run
+`add_tesseract_to_path.bat` with administrator rights to add it automatically.
