@@ -48,7 +48,9 @@ class Ui:
             self.load_capture_region(command['region_name'])
 
     def load_capture_region(self, region_name, yaml_path='regions.yaml'):
-        region = self.region_handler.load(region_name, yaml_path)
+        if yaml_path != self.region_handler.yaml_path:
+            self.region_handler = RegionHandler(yaml_path)
+        region = self.region_handler.load(region_name)
         if region:
             self.capture_region = region
             self.region_handler.validate(self.capture_region, save_preview=True, region_name=region_name)

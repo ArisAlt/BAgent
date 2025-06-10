@@ -47,6 +47,17 @@ class RegionHandler:
     def list_regions(self):
         return list(self.regions.keys())
 
+    def get_type(self, name):
+        """Return the stored type for a region or None."""
+        entry = self.regions.get(name)
+        if entry:
+            return entry.get('type')
+        return None
+
+    def get_coords(self, name):
+        """Convenience wrapper around :meth:`load`."""
+        return self.load(name)
+
     def add_region(self, name, abs_coords, region_type):
         if not name.isidentifier():
             raise ValueError("Invalid region name.")
@@ -95,6 +106,22 @@ class RegionHandler:
         cv2.waitKey(0)
         cv2.destroyAllWindows()
         return True
+
+    def validate(self, coords, save_preview=False, region_name="region"):
+        """Validate coordinates fall inside the current screen resolution."""
+        if not coords:
+            return False
+        x1, y1, x2, y2 = coords
+        w, h = self.get_screen_resolution()
+        valid = 0 <= x1 < x2 <= w and 0 <= y1 < y2 <= h
+        if valid and save_preview:
+            img = capture_screen(select_region=False)
+            crop = img[y1:y2, x1:x2]
+            sd = os.path.join(BASE_DIR, self.PREVIEW_DIR)
+            os.makedirs(sd, exist_ok=True)
+            fp = os.path.join(sd, f"{region_name}_preview.png")
+            cv2.imwrite(fp, crop)
+        return valid
 
 
 def print_menu():
@@ -187,7 +214,7 @@ def capture_region_tool():
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
             fp = os.path.join(sd, f"{name}_{ts}.png")
             cv2.imwrite(fp, crop)
-            print(f"Region '{name}' captured. Screenshot saved: {fp},\n{name} captured. Screenshot saved: {fp}")
+            print(f"Region '{name}' captured. Screenshot saved: {fp}")
 
         elif op == 'list':
             # List regions with absolute coordinates and types
