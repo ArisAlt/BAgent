@@ -33,3 +33,10 @@ python pre_train_data.py --demos demo_buffer.pkl --out bc_model.pt
 ```bash
 python run_start.py --train --bc_model bc_model.pt --timesteps 50000
 ```
+
+## Mining Helpers
+
+The ``MiningActions`` class implements the sequence of recommended mining
+steps defined in *Scaffold.md*. It provides helpers for warping to asteroid
+belts, approaching targets and performing human-like idle behaviour. See
+``src/mining_actions.py`` for the full list of methods.
