@@ -14,23 +14,19 @@ from cv import CvEngine
 from state_machine import FSM, Event
 
 class EveBot:
-<<<<<<< HEAD
     def __init__(self, model_path=None):
         # Initialize environment, agent, UI, and FSM
         self.env = EveEnv()
-        self.agent = AIPilot(model_path=model_path)
+        self.agent = AIPilot(model_path=model_path, env=self.env)
         self.ui = Ui()
         self.fsm = FSM()
-=======
-    def __init__(self, config):
-        self.config = config
->>>>>>> origin/Save
         self.running = False
-        self.fsm = FSM()
         self.rh = RegionHandler()
         self.ocr = OcrEngine()
         self.cv = CvEngine()
         self.gui_logger = None
+        self.reward_label = None
+        self.integrity_label = None
 
     def log(self, message):
         timestamped = f"[{time.strftime('%H:%M:%S')}] {message}"
@@ -48,12 +44,24 @@ class EveBot:
         self.running = False
         self.log("⛔ Bot stopped.")
 
+    def manual_action(self, action_idx: int):
+        """Execute a manual action index via the environment."""
+        cmd = self.env._action_to_command(action_idx)
+        self.ui.execute(cmd)
+        reward = self.env._compute_reward()
+        self.log(f"Manual action {action_idx} → reward {reward:.2f}")
+        if self.reward_label:
+            self.reward_label.setText(f"Reward: {reward:.2f}")
+
     def _main_loop(self):
         import capture_utils
         while self.running:
             screen = capture_utils.capture_screen(select_region=False)
             if self.fsm.state.name == 'MINING':
                 self._do_mining_routine(screen)
+            reward = self.env._compute_reward()
+            if self.reward_label:
+                self.reward_label.setText(f"Reward: {reward:.2f}")
             time.sleep(0.2)
 
     def _do_mining_routine(self, screen):
@@ -141,16 +149,36 @@ class BotGui(QtWidgets.QWidget):
         self.log_area.setReadOnly(True)
         layout.addWidget(self.log_area)
 
+        self.reward_label = QtWidgets.QLabel("Reward: 0.0")
+        self.integrity_label = QtWidgets.QLabel("Integrity: 100")
+        layout.addWidget(self.reward_label)
+        layout.addWidget(self.integrity_label)
+
         self.start_btn = QtWidgets.QPushButton("Start Bot")
         self.stop_btn = QtWidgets.QPushButton("Stop Bot")
         layout.addWidget(self.start_btn)
         layout.addWidget(self.stop_btn)
 
-        self.bot = EveBot(config={})
+        self.override_input = QtWidgets.QLineEdit()
+        self.override_input.setPlaceholderText("Action index")
+        self.override_btn = QtWidgets.QPushButton("Send Manual Action")
+        layout.addWidget(self.override_input)
+        layout.addWidget(self.override_btn)
+
+        self.bot = EveBot(model_path=None)
         self.bot.gui_logger = self.log_area
+        self.bot.reward_label = self.reward_label
 
         self.start_btn.clicked.connect(self.bot.start)
         self.stop_btn.clicked.connect(self.bot.stop)
+        self.override_btn.clicked.connect(self._send_manual)
+
+    def _send_manual(self):
+        text = self.override_input.text()
+        if text.isdigit():
+            self.bot.manual_action(int(text))
+        else:
+            self.log_area.append("Invalid action index")
 
 
 if __name__ == "__main__":
