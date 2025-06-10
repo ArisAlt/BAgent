@@ -17,7 +17,7 @@
 ## Directory Structure
 
 ```
-EVEBot/
+BAgent/
 ├── src/
 │   ├── bot_core.py       # version: 0.4.0 | path: src/bot_core.py  
 │   ├── env.py            # version: 0.4.4 | path: src/env.py  
@@ -29,10 +29,13 @@ EVEBot/
 │   └── roi_capture.py    # version: 0.1.8 | path: src/roi_capture.py  
 ├── run_start.py          # version: 0.2.0 | path: run_start.py  
 ├── data_recorder.py      # version: 0.3.0 | path: data_recorder.py  
-├── pretrain_model.py     # version: 0.1.1 | path: pretrain_model.py  
-├── test_env.py           # version: 0.1.1 | path: test_env.py  
-├── requirements.txt      # version: 0.4.0 | path: requirements.txt  
-└── README.md             # version: 0.4.1 | path: README.md  
+├── export_ocr_samples.py # version: 0.1.0 | path: export_ocr_samples.py
+├── generate_box_files.py # version: 0.1.0 | path: generate_box_files.py
+├── pre_train_data.py     # version: 0.1.0 | path: pre_train_data.py
+├── test_env.py           # version: 0.1.1 | path: test_env.py
+├── tests/                # test suite
+├── training_texts_dir/   # OCR training data
+└── README.md             # version: 0.4.1 | path: README.md
 ```
 
 ---
@@ -45,10 +48,10 @@ EVEBot/
 - **Environment Enhancements:**  
   - Dynamic ROI loading, text & detection regions, cargo capacity parsing.  
   - Expanded action set from EVE-Master internal nodes.  
-- **Data & Training Pipeline:**  
-  - `data_recorder.py` supports manual/automatic demo collection.  
-  - `pretrain_model.py` behavior cloning to `bc_pretrained.zip`.  
-  - CLI entry via `run_start.py` and PySide6 GUI support.  
+- **Data & Training Pipeline:**
+  - `data_recorder.py` supports manual/automatic demo collection.
+  - Tools for dataset generation and preprocessing.
+  - CLI entry via `run_start.py` and PySide6 GUI support.
 - **Testing & Validation:**  
   - `test_env.py` for quick ROI and env step sanity checks.  
 
@@ -141,7 +144,7 @@ torch
   - ROI capture and validation logic moved to `roi_capture.py`.
 - **Data Recording & Pretraining**:
   - `data_recorder.py` allows manual/automatic action logging.
-  - `pretrain_model.py` for behavior cloning from recorded data.
+  - Scripts for behavior cloning from recorded data.
   - Placeholder `agent.py` for PPO model management.
   - `bot_core.py` central bot loop connecting all modules.
 
