@@ -1,4 +1,4 @@
-# version: 0.5.0
+# version: 0.5.1
 # path: src/bot_core.py
 
 import sys
@@ -134,13 +134,16 @@ class EveBot:
                 self.log("↕️ Sorting overview by distance")
                 time.sleep(0.5)
 
-            # Click first asteroid row
-            box = self.rh.load("overview_panel")
-            if box:
-                x1, y1, x2, y2 = box
-                pyautogui.click(x1 + 40, y1 + 15)
-                self.log("🪨 Selected nearest asteroid")
-                time.sleep(0.5)
+            # Select asteroid using OCR fallback to first row
+            if self.mining.target_asteroid_via_ocr():
+                self.log("🪨 Selected asteroid via OCR")
+            else:
+                box = self.rh.load("overview_panel")
+                if box:
+                    x1, y1, x2, y2 = box
+                    pyautogui.click(x1 + 40, y1 + 15)
+                    self.log("🪨 Selected nearest asteroid")
+                    time.sleep(0.5)
 
             self.mining.approach_asteroid()
             self.mining.human_like_idle()

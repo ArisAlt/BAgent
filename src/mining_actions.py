@@ -1,4 +1,4 @@
-# version: 0.1.0
+# version: 0.1.1
 # path: src/mining_actions.py
 """High level mining routine utilities.
 
@@ -83,6 +83,23 @@ class MiningActions:
             x1, y1, x2, y2 = box
             pyautogui.click((x1 + x2) // 2, (y1 + y2) // 2)
             self._sleep(1.0)
+
+    def target_asteroid_via_ocr(self):
+        """Scan the overview for an asteroid entry using OCR and click it."""
+        panel = self.rh.load("overview_panel")
+        if not panel:
+            return False
+
+        x1, y1, x2, y2 = panel
+        screen = capture_utils.capture_screen(select_region=False)
+        crop = screen[y1:y2, x1:x2]
+        pos = self.cv.find_asteroid_entry(crop)
+        if pos:
+            cx, cy = pos
+            pyautogui.click(x1 + cx, y1 + cy)
+            self._sleep(0.5)
+            return True
+        return False
 
     def activate_mining_lasers(self):
         slots = ["module_slot1", "module_slot2", "module_slot3"]
