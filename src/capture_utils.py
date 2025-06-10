@@ -1,71 +1,84 @@
-# version: 0.1.3
+# version: 0.7.0
 # path: src/capture_utils.py
-
-import os
-import sys
-
-try:
-    import win32gui
-except ImportError:
-    win32gui = None
 
 import cv2
 import numpy as np
-from PIL import ImageGrab
+import ctypes
+from ctypes.wintypes import RECT
+import win32gui
+import win32ui
+import win32con
+import time
 
-_window_bbox = None
+# Make the process DPI aware so coordinates match real pixels
+ctypes.windll.user32.SetProcessDPIAware()
+_first_foreground = True
 
-def capture_screen(select_region: bool = False):
+def get_window_rect(title: str):
+    hwnd = ctypes.windll.user32.FindWindowW(0, title)
+    if hwnd == 0:
+        raise RuntimeError(f"[Capture] ❌ Window '{title}' not found.")
+    rect = RECT()
+    ctypes.windll.user32.GetWindowRect(hwnd, ctypes.pointer(rect))
+    return (rect.left, rect.top, rect.right, rect.bottom), hwnd
+
+def capture_screen(select_region=False, window_title="EVE - CitizenZero"):
     """
-    Capture the EVE client window, or (if select_region) let the user select a sub-region.
-
-    Args:
-        select_region: If True, opens a ROI selector on the EVE window.
-    Returns:
-        If select_region: Tuple[int, int, int, int] of absolute coords.
-        Otherwise: np.ndarray BGR image of the EVE window.
+    Capture a window using PrintWindow (safest GDI method for layered content).
+    Works best when EVE is not fullscreen-exclusive.
     """
-    global _window_bbox
+    global _first_foreground
 
-    # First-time: determine EVE window bbox
-    if _window_bbox is None:
-        full = _grab_full_screen_bgr()
+    try:
+        (left, top, right, bottom), hwnd = get_window_rect(window_title)
+    except RuntimeError as e:
+        print(str(e))
+        return None
 
-        # Try Windows auto-detect
-        if win32gui:
-            hwnds = []
-            win32gui.EnumWindows(lambda h, p: p.append(h) if win32gui.IsWindowVisible(h) and "EVE" in win32gui.GetWindowText(h) else None, hwnds)
-            if hwnds:
-                x1, y1, x2, y2 = win32gui.GetWindowRect(hwnds[0])
-                _window_bbox = (x1, y1, x2, y2)
-        # If still unknown, and manual ROI requested:
-        if _window_bbox is None:
-            if select_region:
-                rect = cv2.selectROI("Select EVE Window", full, showCrosshair=False, fromCenter=False)
-                cv2.destroyWindow("Select EVE Window")
-                x, y, w, h = rect
-                _window_bbox = (int(x), int(y), int(x+w), int(y+h))
-            else:
-                # fallback to full screen
-                h, w = full.shape[:2]
-                _window_bbox = (0, 0, w, h)
+    width = right - left
+    height = bottom - top
 
-    # Grab the window region
-    x1, y1, x2, y2 = _window_bbox
-    img_rgb = np.array(ImageGrab.grab(bbox=_window_bbox))
-    window_img = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
+    # Bring EVE to foreground on first run
+    if _first_foreground:
+        try:
+            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+            win32gui.SetForegroundWindow(hwnd)
+            time.sleep(0.3)
+        except Exception as e:
+            print(f"[Capture] ⚠️ Could not bring to foreground: {e}")
+        _first_foreground = False
 
-    if select_region:
-        # Let user pick a sub-ROI within the window
-        rect = cv2.selectROI("Select Region", window_img, showCrosshair=False, fromCenter=False)
-        cv2.destroyWindow("Select Region")
-        x, y, w, h = rect
-        # Convert to absolute coords
-        return (int(x1 + x), int(y1 + y), int(x1 + x + w), int(y1 + y + h))
+    hwnd_dc = win32gui.GetWindowDC(hwnd)
+    mfc_dc  = win32ui.CreateDCFromHandle(hwnd_dc)
+    save_dc = mfc_dc.CreateCompatibleDC()
+    bmp     = win32ui.CreateBitmap()
+    bmp.CreateCompatibleBitmap(mfc_dc, width, height)
+    save_dc.SelectObject(bmp)
 
-    return window_img
+    # Try PrintWindow
+    result = ctypes.windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), 0)
+    if result != 1:
+        print("[Capture] ⚠️ PrintWindow failed. Screen may be black.")
+        return None
 
-def _grab_full_screen_bgr():
-    """Helper: full-screen grab as BGR."""
-    img_rgb = np.array(ImageGrab.grab())
-    return cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
+    bmp_info = bmp.GetInfo()
+    bmp_str = bmp.GetBitmapBits(True)
+    img = np.frombuffer(bmp_str, dtype='uint8').reshape((height, width, 4))
+
+    # Cleanup
+    win32gui.DeleteObject(bmp.GetHandle())
+    save_dc.DeleteDC()
+    mfc_dc.DeleteDC()
+    win32gui.ReleaseDC(hwnd, hwnd_dc)
+
+    return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+
+# --- Test directly ---
+if __name__ == "__main__":
+    frame = capture_screen(window_title="EVE - CitizenZero")
+    if frame is not None:
+        cv2.imshow("PrintWindow Capture", frame)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+    else:
+        print("❌ Could not capture.")

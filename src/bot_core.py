@@ -1,183 +1,160 @@
-# version: 0.4.2
+# version: 0.5.0
 # path: src/bot_core.py
 
 import sys
-import threading
 import time
-import logging
-from env import EveEnv
-from agent import AIPilot
-from ui import Ui
-from state_machine import FSM, Event, State
-from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget,
-    QPushButton, QLineEdit, QTextEdit,
-    QVBoxLayout, QLabel
-)
-from PySide6.QtCore import Qt
+import re
+import pyautogui
+import cv2
+from PySide6 import QtWidgets, QtCore, QtGui
 
+from roi_capture import RegionHandler
+from ocr import OcrEngine
+from cv import CvEngine
+from state_machine import FSM, Event
 
 class EveBot:
+<<<<<<< HEAD
     def __init__(self, model_path=None):
         # Initialize environment, agent, UI, and FSM
         self.env = EveEnv()
         self.agent = AIPilot(model_path=model_path)
         self.ui = Ui()
         self.fsm = FSM()
+=======
+    def __init__(self, config):
+        self.config = config
+>>>>>>> origin/Save
         self.running = False
+        self.fsm = FSM()
+        self.rh = RegionHandler()
+        self.ocr = OcrEngine()
+        self.cv = CvEngine()
+        self.gui_logger = None
 
-    def run(self):
-        """
-        Main loop: capture UI, dispatch FSM events, decide and execute actions.
-        """
-        logger = logging.getLogger('EveBot')
+    def log(self, message):
+        timestamped = f"[{time.strftime('%H:%M:%S')}] {message}"
+        print(timestamped)
+        if self.gui_logger:
+            self.gui_logger.append(timestamped)
+
+    def start(self):
         self.running = True
-
-        # Reset environment to get initial observation
-        obs = self.env.reset()
-        done = False
-
-        while self.running and not done:
-            # 1. Capture screen and extract data
-            screenshot = self.ui.capture()
-            text_data = self.env.ocr.extract_text(screenshot).lower()
-            elements = self.env.cv.detect_elements(
-                screenshot,
-                templates=self.env._load_templates()
-            )
-
-            # 2. Dispatch FSM events based on UI cues
-            self.dispatch_events(elements, text_data)
-            logger.info(f"FSM State: {self.fsm.state.name}")
-
-            # 3. Decide next action based on current FSM state
-            action = self.decide_action(obs)
-
-            # 4. Execute action and step environment
-            obs, reward, done, info = self.env.step(action)
-
-            # 5. Log details
-            logger.info(
-                f"Action: {action}, Reward: {reward:.2f}, Done: {done}, New State: {self.fsm.state.name}"
-            )
-
-            # Small delay to control loop speed
-            time.sleep(1)
-
-        logger.info("Bot run loop exited.")
+        self.fsm.on_event(Event.START_MINING)
+        self.log(f"▶️ Bot started. State: {self.fsm.state.name}")
+        self._main_loop()
 
     def stop(self):
-        """Stop the bot loop."""
         self.running = False
+        self.log("⛔ Bot stopped.")
 
-    def dispatch_events(self, elements, text_data):
-        """
-        Map detected UI elements and OCR text to FSM events.
-        """
-        # Mining start detection
-        if any(e['name'] == 'mining_laser_on' for e in elements):
-            self.fsm.on_event(Event.START_MINING)
+    def _main_loop(self):
+        import capture_utils
+        while self.running:
+            screen = capture_utils.capture_screen(select_region=False)
+            if self.fsm.state.name == 'MINING':
+                self._do_mining_routine(screen)
+            time.sleep(0.2)
 
-        # Hostile encountered
-        if any(e['name'] == 'hostile_alert' for e in elements):
-            self.fsm.on_event(Event.ENEMY_DETECTED)
+    def _do_mining_routine(self, screen):
+        self.log("⛏ Mining routine tick")
 
-        # Dock/Undock
-        if 'docked' in text_data:
-            self.fsm.on_event(Event.DOCK)
-        elif 'undocked' in text_data:
-            self.fsm.on_event(Event.UNDOCK)
+        # 1. CARGO HOLD CHECK
+        cargo_box = self.rh.load('mining_cargo_hold_capacity')
+        if cargo_box:
+            x1, y1, x2, y2 = cargo_box
+            crop = screen[y1:y2, x1:x2]
+            text = self.ocr.extract_text(crop)
+            match = re.search(r'(\d+)', text)
+            if match:
+                pct = int(match.group(1))
+                self.log(f"📦 Cargo: {pct}%")
+                if pct >= 90:
+                    self.log("🚀 Cargo full, docking...")
+                    self.fsm.on_event(Event.DOCK)
+                    return
 
-    def decide_action(self, obs):
-        """
-        Choose action based on current FSM state.
-        Extend this with state-specific logic as needed.
-        """
-        state = self.fsm.state
-        if state == State.MINING:
-            # TODO: implement mining-specific actions
-            return self.agent.decide(obs)
-        elif state == State.COMBAT:
-            # TODO: implement combat-specific actions
-            return self.agent.decide(obs)
-        elif state == State.DOCKING:
-            # TODO: implement docking-specific actions
-            return self.agent.decide(obs)
-        else:
-            # IDLE, MISSION, EXPLORATION, etc.
-            return self.agent.decide(obs)
+        # 2. LASER MODULES
+        slots = ['module_slot1', 'module_slot2', 'module_slot3']
+        active = False
+        for slot in slots:
+            box = self.rh.load(slot)
+            if box:
+                x1, y1, x2, y2 = box
+                if self.cv.is_module_active(screen[y1:y2, x1:x2]):
+                    active = True
+                    break
+
+        if not active:
+            self.log("🔄 Mining lasers inactive → activating")
+            for slot in slots:
+                box = self.rh.load(slot)
+                if box:
+                    x1, y1, x2, y2 = box
+                    pyautogui.click((x1 + x2) // 2, (y1 + y2) // 2)
+                    time.sleep(0.2)
+            time.sleep(1.0)
+            return
+
+        # 3. TARGET LOCK
+        locked = False
+        box = self.rh.load("is_target_locked")
+        if box:
+            x1, y1, x2, y2 = box
+            locked = self.cv.detect_target_lock(screen[y1:y2, x1:x2])
+
+        if not locked:
+            self.log("🔎 No target locked — acquiring new asteroid")
+
+            # Sort overview by distance
+            box = self.rh.load("overview_distance_header")
+            if box:
+                x1, y1, x2, y2 = box
+                pyautogui.click((x1 + x2) // 2, (y1 + y2) // 2)
+                self.log("↕️ Sorting overview by distance")
+                time.sleep(0.5)
+
+            # Click first asteroid row
+            box = self.rh.load("overview_panel")
+            if box:
+                x1, y1, x2, y2 = box
+                pyautogui.click(x1 + 40, y1 + 15)
+                self.log("🪨 Selected nearest asteroid")
+                time.sleep(0.5)
+
+            # Click Approach
+            box = self.rh.load("approach_button")
+            if box:
+                x1, y1, x2, y2 = box
+                pyautogui.click((x1 + x2) // 2, (y1 + y2) // 2)
+                self.log("🛸 Approaching target")
+                time.sleep(0.5)
 
 
-class QTextEditLogger(logging.Handler):
-    def __init__(self, text_edit):
-        super().__init__()
-        self.text_edit = text_edit
-
-    def emit(self, record):
-        msg = self.format(record)
-        self.text_edit.append(msg)
-
-
-class BotGUI(QMainWindow):
+class BotGui(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("EVE Bot Control")
-        self.bot = None
-        self.thread = None
+        self.setWindowTitle("EVE Bot Controller")
+        layout = QtWidgets.QVBoxLayout(self)
 
-        central = QWidget()
-        self.setCentralWidget(central)
-        layout = QVBoxLayout(central)
-
-        # Model path input
-        self.model_input = QLineEdit("eve_bot_model.zip")
-        layout.addWidget(QLabel("Model Path:"))
-        layout.addWidget(self.model_input)
-
-        # Start/Stop buttons
-        self.start_button = QPushButton("Start Bot")
-        self.start_button.clicked.connect(self.start_bot)
-        layout.addWidget(self.start_button)
-
-        self.stop_button = QPushButton("Stop Bot")
-        self.stop_button.setEnabled(False)
-        self.stop_button.clicked.connect(self.stop_bot)
-        layout.addWidget(self.stop_button)
-
-        # Log display
-        self.log_area = QTextEdit()
+        self.log_area = QtWidgets.QTextEdit()
         self.log_area.setReadOnly(True)
         layout.addWidget(self.log_area)
 
-        # Configure logging to GUI
-        logger = logging.getLogger('EveBot')
-        logger.setLevel(logging.INFO)
-        handler = QTextEditLogger(self.log_area)
-        handler.setFormatter(logging.Formatter('%(asctime)s: %(message)s', '%H:%M:%S'))
-        logger.addHandler(handler)
-        logger.info("GUI Ready.")
+        self.start_btn = QtWidgets.QPushButton("Start Bot")
+        self.stop_btn = QtWidgets.QPushButton("Stop Bot")
+        layout.addWidget(self.start_btn)
+        layout.addWidget(self.stop_btn)
 
-    def start_bot(self):
-        model_path = self.model_input.text().strip()
-        self.bot = EveBot(model_path=model_path)
-        self.thread = threading.Thread(target=self.bot.run, daemon=True)
-        self.thread.start()
-        self.start_button.setEnabled(False)
-        self.stop_button.setEnabled(True)
-        logging.getLogger('EveBot').info("Bot started.")
+        self.bot = EveBot(config={})
+        self.bot.gui_logger = self.log_area
 
-    def stop_bot(self):
-        if self.bot:
-            self.bot.stop()
-            self.thread.join()
-            self.start_button.setEnabled(True)
-            self.stop_button.setEnabled(False)
-            logging.getLogger('EveBot').info("Bot stopped by user.")
+        self.start_btn.clicked.connect(self.bot.start)
+        self.stop_btn.clicked.connect(self.bot.stop)
 
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    gui = BotGUI()
-    gui.resize(600, 400)
-    gui.show()
+    app = QtWidgets.QApplication(sys.argv)
+    window = BotGui()
+    window.show()
     sys.exit(app.exec())

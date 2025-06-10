@@ -6,6 +6,7 @@ import numpy as np
 from PIL import Image
 import threading
 import queue
+import pytesseract
 
 class CvEngine:
     def __init__(self):
@@ -14,6 +15,8 @@ class CvEngine:
         self.worker_thread = threading.Thread(target=self._process_queue)
         self.worker_thread.daemon = True
         self.worker_thread.start()
+        self.lock_template = cv2.imread("templates/is_target_locked.png", 0)
+        self.lock_threshold = 0.8
 
     def detect_elements(self, img, templates, threshold=0.8, multi_scale=False, scales=None):
         """
@@ -45,6 +48,29 @@ class CvEngine:
                         'scale': scale
                     })
         return detected_elements
+    def is_module_active(self, slot_img):
+        """
+        Detect whether a ship module (laser, etc.) is currently active based on brightness.
+        Active modules generally glow (higher intensity).
+        """
+        gray = cv2.cvtColor(slot_img, cv2.COLOR_BGR2GRAY)
+        brightness = np.mean(gray)
+        return brightness > 75  # You can tune this based on actual visuals
+
+    def find_asteroid_entry(self, img):
+        """
+        Try to locate an asteroid in the overview panel using OCR.
+        Returns (x, y) offset inside img, or None.
+        """
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        d = pytesseract.image_to_data(gray, output_type=pytesseract.Output.DICT)
+
+        for i in range(len(d['text'])):
+            word = d['text'][i].strip().lower()
+            if word in ['veldspar', 'scordite', 'plagioclase', 'pyroxeres']:
+                (x, y, w, h) = (d['left'][i], d['top'][i], d['width'][i], d['height'][i])
+                return (x + w//2, y + h//2)  # center of word box
+        return None
 
     def detect_contours(self, img, threshold1=100, threshold2=200):
         """
@@ -93,7 +119,32 @@ class CvEngine:
             w, h = int(w * elem.get('scale', 1.0)), int(h * elem.get('scale', 1.0))
             cv2.rectangle(annotated_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
         return annotated_img
+    def find_asteroid_entry(self, img):
+        """
+        Try to locate an asteroid in the overview panel using OCR.
+        Returns (x, y) offset inside img, or None.
+        """
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        d = pytesseract.image_to_data(gray, output_type=pytesseract.Output.DICT)
 
+        for i in range(len(d['text'])):
+            word = d['text'][i].strip().lower()
+            if word in ['veldspar', 'scordite', 'plagioclase', 'pyroxeres']:
+                (x, y, w, h) = (d['left'][i], d['top'][i], d['width'][i], d['height'][i])
+                return (x + w//2, y + h//2)  # center of word box
+        return None
+    def detect_target_lock(self, img):
+        """
+        Match the red crosshair target-lock icon inside the is_target_locked ROI.
+        Returns True if locked target is detected.
+        """
+        if img is None or self.lock_template is None:
+            return False
+
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        result = cv2.matchTemplate(gray, self.lock_template, cv2.TM_CCOEFF_NORMED)
+        _, max_val, _, _ = cv2.minMaxLoc(result)
+        return max_val > self.lock_threshold
     def queue_image_for_detection(self, img, templates, threshold=0.8, multi_scale=False, scales=None):
         """
         Add an image and templates to the processing queue.
