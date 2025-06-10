@@ -3,6 +3,10 @@
 
 import os
 import argparse
+import sys
+
+# Ensure local src modules are importable when running directly
+sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
