@@ -31,6 +31,9 @@ def test_rois():
 def test_env_steps(num_steps: int = 5):
     """Reset the environment and take a few random actions."""
     env = EveEnv()
+    assert len(env.actions) == env.action_space.n
+    assert len(env.actions) > 0
+    assert isinstance(env.actions[0], tuple) and len(env.actions[0]) == 2
     obs = env.reset()
     print(f"\n[Env] Reset → initial obs snippet: {obs[:5]}…\n")
 
