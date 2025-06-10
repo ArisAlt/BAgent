@@ -20,7 +20,7 @@ from PySide6.QtCore import Qt
 class EveBot:
     def __init__(self, model_path=None):
         # Initialize environment, agent, UI, and FSM
-        self.env = EveEnv(max_actions=None)
+        self.env = EveEnv()
         self.agent = AIPilot(model_path=model_path)
         self.ui = Ui()
         self.fsm = FSM()
