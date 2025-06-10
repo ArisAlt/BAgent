@@ -3,6 +3,12 @@
 
 import time
 import random
+import pytest
+
+try:
+    import cv2  # noqa: F401
+except Exception:  # pragma: no cover - skip if cv2 unavailable
+    pytest.skip("cv2 not available", allow_module_level=True)
 
 # Make sure Python can import your modules
 import os, sys
