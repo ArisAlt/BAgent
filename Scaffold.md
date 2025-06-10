@@ -15,13 +15,25 @@ BAgent/
 │   ├── ocr.py            # version: 0.3.4 | path: src/ocr.py  
 │   ├── cv.py             # version: 0.3.2 | path: src/cv.py  
 │   ├── ui.py             # version: 0.3.7 | path: src/ui.py  
-│   ├── capture_utils.py  # version: 0.1.0 | path: src/capture_utils.py  
-│   └── roi_capture.py    # version: 0.1.8 | path: src/roi_capture.py  
+│   ├── capture_utils.py  # version: 0.1.0 | path: src/capture_utils.py
+│   ├── roi_capture.py    # version: 0.1.8 | path: src/roi_capture.py
+│   ├── mining_actions.py # version: 0.1.0 | path: src/mining_actions.py
+│   ├── ocr_finetune.py   # version: 0.1.0 | path: src/ocr_finetune.py
+│   ├── roi_live_overlay.py # version: 0.3.0 | path: src/roi_live_overlay.py
+│   ├── state_machine.py  # version: 0.2.0 | path: src/state_machine.py
+│   ├── config/
+│   │   └── agent_config.yaml # version: 0.1.0 | path: src/config/agent_config.yaml
+│   └── roi_screenshots/  # ROI screenshot samples
 ├── run_start.py          # version: 0.2.0 | path: run_start.py  
 ├── data_recorder.py      # version: 0.3.0 | path: data_recorder.py  
 ├── export_ocr_samples.py # version: 0.1.0 | path: export_ocr_samples.py
 ├── generate_box_files.py # version: 0.1.0 | path: generate_box_files.py
 ├── pre_train_data.py     # version: 0.1.0 | path: pre_train_data.py
+├── add_tesseract_to_path.bat # helper script to set PATH on Windows
+├── ets.txt               # sample training commands
+├── promts.txt            # project prompts and notes
+├── regions.yaml          # saved ROI definitions
+├── requirements.txt      # Python dependencies
 ├── test_env.py           # version: 0.1.1 | path: test_env.py
 ├── tests/                # test suite
 ├── training_texts_dir/   # OCR training data
