@@ -1,21 +1,11 @@
 # EVE Online Bot Project Scaffold
 
-> version: 0.3.0\
-> updated: Added demo AI pilot implementation (Gym env & agent), mining actions
-
----
-
-## Directory Structure
-```
-# EVE Online Bot Project Scaffold
-
-> version: 0.4.4  
+> version: 0.4.4
 > updated: Integrated dynamic ROI types, enhanced env, ROI capture tool, GUI, data recorder, pretraining pipeline
 
 ---
 
 ## Directory Structure
-
 ```
 BAgent/
 ├── src/
