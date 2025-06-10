@@ -19,9 +19,9 @@
 ```
 BAgent/
 ├── src/
-│   ├── bot_core.py       # version: 0.4.0 | path: src/bot_core.py  
-│   ├── env.py            # version: 0.4.4 | path: src/env.py  
-│   ├── agent.py          # version: 0.1.0 | path: src/agent.py  
+│   ├── bot_core.py       # version: 0.5.0 | path: src/bot_core.py
+│   ├── env.py            # version: 0.4.4 | path: src/env.py
+│   ├── agent.py          # version: 0.3.0 | path: src/agent.py
 │   ├── ocr.py            # version: 0.3.4 | path: src/ocr.py  
 │   ├── cv.py             # version: 0.3.2 | path: src/cv.py  
 │   ├── ui.py             # version: 0.3.7 | path: src/ui.py  

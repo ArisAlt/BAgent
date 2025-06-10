@@ -1,4 +1,4 @@
-# version: 0.2.0
+# version: 0.3.0
 # path: src/agent.py
 
 import os
@@ -18,7 +18,7 @@ class AIPilot:
     uses RegionHandler for ROI lookups, and implements state-specific decision logic.
     """
 
-    def __init__(self, config_path=None, region_handler=None, model_path=None, env=None):
+    def __init__(self, config_path=None, region_handler=None, model_path=None, env=None, fsm=None):
         # Load configuration
         cfg_path = config_path or os.path.join(
             os.path.dirname(__file__),
@@ -30,12 +30,17 @@ class AIPilot:
         # ROI handler (for all click/hotkey targets)
         self.rh = region_handler or RegionHandler()
         self.env = env or EveEnv()
+        self.fsm = fsm
         self.model = None
         if model_path and os.path.exists(model_path):
             self.model = PPO.load(model_path, env=self.env)
 
         # Internal flag to mark that station bookmark has been clicked
         self._station_selected = False
+
+    def set_fsm(self, fsm):
+        """Attach a finite state machine to the pilot after construction."""
+        self.fsm = fsm
 
     def decide(self, obs=None, state=None):
         """Return a command based on either the RL model or rule logic."""
@@ -49,6 +54,12 @@ class AIPilot:
             return self.decide_mining(obs)
         elif state == State.DOCKING:
             return self.decide_docking(obs)
+        elif state == State.COMBAT:
+            return self.decide_combat(obs)
+        elif state == State.MISSION:
+            return self.decide_mission(obs)
+        elif state == State.EXPLORATION:
+            return self.decide_exploration(obs)
         else:
             return self.decide_idle(obs)
 
@@ -60,7 +71,7 @@ class AIPilot:
         3) When cargo >= threshold, transition to docking via shortcut.
         """
         mining_cfg = self.config['mining']
-        threshold = mining_cfg['cargo_threshold_pct']
+        threshold = mining_cfg.get('cargo_threshold_pct', mining_cfg.get('cargo_threshold', 90))
         asteroid_roi = mining_cfg['asteroid_roi']
         module_keys = mining_cfg['mining_modules']['hotkeys']
 
@@ -87,6 +98,44 @@ class AIPilot:
         Always use the shortcut routine when in DOCKING state.
         """
         return self.dock_via_shortcut(obs)
+
+    def decide_combat(self, obs):
+        """Simple combat routine: activate combat modules and retreat if low health."""
+        combat_cfg = self.config['combat']
+        retreat = combat_cfg.get('retreat_threshold', 30)
+        modules = combat_cfg.get('activate_modules', [])
+
+        if obs.get('ship_health_pct', 100) <= retreat:
+            if self.fsm:
+                self.fsm.on_event(Event.DOCK)
+            return self.dock_via_shortcut(obs)
+
+        if not obs.get('combat_modules_active', False) and modules:
+            return {'type': 'hotkey', 'keys': modules}
+
+        return {'type': 'noop'}
+
+    def decide_mission(self, obs):
+        """Mission acceptance logic."""
+        mission_cfg = self.config['mission']
+        if not obs.get('mission_accepted', False):
+            roi = mission_cfg.get('accept_mission_roi')
+            if roi:
+                return {'type': 'click', 'roi': roi}
+        return {'type': 'noop'}
+
+    def decide_exploration(self, obs):
+        """Exploration scanning routine."""
+        exp_cfg = self.config['exploration']
+        if not obs.get('anomaly_found', False):
+            roi = exp_cfg.get('scan_button_roi')
+            if roi:
+                return {'type': 'click', 'roi': roi}
+        else:
+            roi = exp_cfg.get('anomaly_window_roi')
+            if roi:
+                return {'type': 'click', 'roi': roi}
+        return {'type': 'noop'}
 
     def dock_via_shortcut(self, obs):
         """
