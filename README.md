@@ -13,3 +13,23 @@ Run tests with:
 ```bash
 pytest -q
 ```
+
+## Behavior Cloning Pretraining
+
+1. Record demonstrations:
+
+```bash
+python data_recorder.py --manual False
+```
+
+2. Train the BC model:
+
+```bash
+python pre_train_data.py --demos demo_buffer.pkl --out bc_model.pt
+```
+
+3. Fine-tune with PPO (optional `--bc_model`):
+
+```bash
+python run_start.py --train --bc_model bc_model.pt --timesteps 50000
+```

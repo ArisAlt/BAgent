@@ -5,13 +5,17 @@ import cv2
 import numpy as np
 import ctypes
 from ctypes.wintypes import RECT
-import win32gui
-import win32ui
-import win32con
+try:
+    import win32gui
+    import win32ui
+    import win32con
+except Exception:  # pragma: no cover - allow headless testing
+    win32gui = win32ui = win32con = None
 import time
 
-# Make the process DPI aware so coordinates match real pixels
-ctypes.windll.user32.SetProcessDPIAware()
+# Make the process DPI aware so coordinates match real pixels (Windows only)
+if hasattr(ctypes, "windll") and win32gui is not None:
+    ctypes.windll.user32.SetProcessDPIAware()
 _first_foreground = True
 
 def get_window_rect(title: str):
@@ -29,6 +33,10 @@ def capture_screen(select_region=False, window_title="EVE - CitizenZero"):
     """
     global _first_foreground
 
+    if win32gui is None:
+        # headless fallback for tests
+        return np.zeros((10, 10, 3), dtype=np.uint8)
+
     try:
         (left, top, right, bottom), hwnd = get_window_rect(window_title)
     except RuntimeError as e:
@@ -39,7 +47,7 @@ def capture_screen(select_region=False, window_title="EVE - CitizenZero"):
     height = bottom - top
 
     # Bring EVE to foreground on first run
-    if _first_foreground:
+    if _first_foreground and win32gui is not None:
         try:
             win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
             win32gui.SetForegroundWindow(hwnd)

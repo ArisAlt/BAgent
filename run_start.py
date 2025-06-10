@@ -21,6 +21,7 @@ def main():
     parser.add_argument("--test",  action="store_true", help="Run a test episode")
     parser.add_argument("--timesteps", type=int, default=50_000, help="Number of training timesteps")
     parser.add_argument("--model_path", type=str, default="eve_bot_model", help="Path to save/load model")
+    parser.add_argument("--bc_model", type=str, default=None, help="Pretrained behavior cloning model")
     args = parser.parse_args()
 
     log_dir = "logs"
@@ -53,6 +54,15 @@ def main():
             verbose=1,
             tensorboard_log=log_dir
         )
+        if args.bc_model and os.path.exists(args.bc_model):
+            import torch
+            state = torch.load(args.bc_model, map_location="cpu")
+            policy_state = model.policy.state_dict()
+            for k in state:
+                if k in policy_state and state[k].shape == policy_state[k].shape:
+                    policy_state[k] = state[k]
+            model.policy.load_state_dict(policy_state)
+            print(f"Loaded BC weights from {args.bc_model}")
 
         # Train with all callbacks
         model.learn(
@@ -68,6 +78,14 @@ def main():
         # Load model and run one test episode
         env = EveEnv()
         model = PPO.load(os.path.join("logs", args.model_path), env=env)
+        if args.bc_model and os.path.exists(args.bc_model):
+            import torch
+            state = torch.load(args.bc_model, map_location="cpu")
+            policy_state = model.policy.state_dict()
+            for k in state:
+                if k in policy_state and state[k].shape == policy_state[k].shape:
+                    policy_state[k] = state[k]
+            model.policy.load_state_dict(policy_state)
         obs = env.reset()
         done = False
         while not done:

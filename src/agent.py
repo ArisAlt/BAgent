@@ -5,10 +5,12 @@ import os
 import yaml
 import pytesseract
 import pyautogui
+from stable_baselines3 import PPO
 
 from capture_utils import capture_screen
 from roi_capture import RegionHandler
 from state_machine import State, Event
+from env import EveEnv
 
 class AIPilot:
     """
@@ -16,7 +18,7 @@ class AIPilot:
     uses RegionHandler for ROI lookups, and implements state-specific decision logic.
     """
 
-    def __init__(self, config_path=None, region_handler=None):
+    def __init__(self, config_path=None, region_handler=None, model_path=None, env=None):
         # Load configuration
         cfg_path = config_path or os.path.join(
             os.path.dirname(__file__),
@@ -27,14 +29,22 @@ class AIPilot:
 
         # ROI handler (for all click/hotkey targets)
         self.rh = region_handler or RegionHandler()
+        self.env = env or EveEnv()
+        self.model = None
+        if model_path and os.path.exists(model_path):
+            self.model = PPO.load(model_path, env=self.env)
 
         # Internal flag to mark that station bookmark has been clicked
         self._station_selected = False
 
-    def decide(self, obs, state):
-        """
-        Route to the appropriate state-specific method.
-        """
+    def decide(self, obs=None, state=None):
+        """Return a command based on either the RL model or rule logic."""
+        if self.model:
+            if obs is None:
+                obs = self.env._get_obs()
+            action, _ = self.model.predict(obs, deterministic=True)
+            return self.env._action_to_command(int(action))
+
         if state == State.MINING:
             return self.decide_mining(obs)
         elif state == State.DOCKING:
