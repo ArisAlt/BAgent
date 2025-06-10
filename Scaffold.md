@@ -30,7 +30,8 @@ EVEBot/
 ├── run_start.py          # version: 0.2.0 | path: run_start.py  
 ├── data_recorder.py      # version: 0.3.0 | path: data_recorder.py  
 ├── pretrain_model.py     # version: 0.1.1 | path: pretrain_model.py  
-├── test_env.py           # version: 0.1.1 | path: test_env.py  
+├── tests/
+│   └── test_env.py  # basic env unit tests
 ├── requirements.txt      # version: 0.4.0 | path: requirements.txt  
 └── README.md             # version: 0.4.1 | path: README.md  
 ```
@@ -50,7 +51,7 @@ EVEBot/
   - `pretrain_model.py` behavior cloning to `bc_pretrained.zip`.  
   - CLI entry via `run_start.py` and PySide6 GUI support.  
 - **Testing & Validation:**  
-  - `test_env.py` for quick ROI and env step sanity checks.  
+  - `tests/test_env.py` provides unit tests for the EveEnv wrapper.  
 
 ---
 
