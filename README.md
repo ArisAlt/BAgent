@@ -40,3 +40,14 @@ The ``MiningActions`` class implements the sequence of recommended mining
 steps defined in *Scaffold.md*. It provides helpers for warping to asteroid
 belts, approaching targets and performing human-like idle behaviour. See
 ``src/mining_actions.py`` for the full list of methods.
+
+## Generating Box Files
+
+Use `generate_box_files.py` to create `.box` files for Tesseract training:
+
+```bash
+python generate_box_files.py -i training_texts_dir/images -b training_texts_dir/box
+```
+
+If Tesseract is not on your `PATH`, provide the path via `--tesseract-cmd` or
+set the `TESSERACT_CMD` environment variable.
