@@ -7,7 +7,7 @@ from src.env import EveEnv
 
 
 def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True):
-    env = EveEnv(max_actions=10)
+    env = EveEnv()
     demo_buffer = []
 
     mode = "manual" if manual else "automatic"
