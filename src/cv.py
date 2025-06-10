@@ -1,4 +1,4 @@
-# version: 0.3.2
+# version: 0.3.3
 # path: src/cv.py
 
 import cv2
@@ -7,6 +7,7 @@ from PIL import Image
 import threading
 import queue
 import pytesseract
+import difflib
 
 class CvEngine:
     def __init__(self):
@@ -57,19 +58,40 @@ class CvEngine:
         brightness = np.mean(gray)
         return brightness > 75  # You can tune this based on actual visuals
 
-    def find_asteroid_entry(self, img):
+    def find_asteroid_entry(self, img, ore_names=None):
+        """Locate an asteroid row inside an overview panel using OCR.
+
+        Parameters
+        ----------
+        img : ndarray or PIL.Image
+            Cropped screenshot of the overview panel.
+        ore_names : list, optional
+            List of ore names to match against. If ``None`` a default list of
+            common ores is used.
+
+        Returns
+        -------
+        tuple or None
+            Coordinates ``(x, y)`` relative to ``img`` of the matched word
+            centre or ``None`` if no ore text was found.
         """
-        Try to locate an asteroid in the overview panel using OCR.
-        Returns (x, y) offset inside img, or None.
-        """
+        default_ores = [
+            "veldspar", "scordite", "plagioclase", "pyroxeres",
+            "omber", "kernite", "jaspet", "hemorphite", "hedbergite",
+            "gneiss", "ochre", "spodumain", "mercoxit"
+        ]
+        ore_names = [o.lower() for o in (ore_names or default_ores)]
+
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         d = pytesseract.image_to_data(gray, output_type=pytesseract.Output.DICT)
 
         for i in range(len(d['text'])):
             word = d['text'][i].strip().lower()
-            if word in ['veldspar', 'scordite', 'plagioclase', 'pyroxeres']:
-                (x, y, w, h) = (d['left'][i], d['top'][i], d['width'][i], d['height'][i])
-                return (x + w//2, y + h//2)  # center of word box
+            if not word:
+                continue
+            if word in ore_names or difflib.get_close_matches(word, ore_names, n=1, cutoff=0.7):
+                x, y, w, h = d['left'][i], d['top'][i], d['width'][i], d['height'][i]
+                return (x + w // 2, y + h // 2)
         return None
 
     def detect_contours(self, img, threshold1=100, threshold2=200):
@@ -119,20 +141,6 @@ class CvEngine:
             w, h = int(w * elem.get('scale', 1.0)), int(h * elem.get('scale', 1.0))
             cv2.rectangle(annotated_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
         return annotated_img
-    def find_asteroid_entry(self, img):
-        """
-        Try to locate an asteroid in the overview panel using OCR.
-        Returns (x, y) offset inside img, or None.
-        """
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        d = pytesseract.image_to_data(gray, output_type=pytesseract.Output.DICT)
-
-        for i in range(len(d['text'])):
-            word = d['text'][i].strip().lower()
-            if word in ['veldspar', 'scordite', 'plagioclase', 'pyroxeres']:
-                (x, y, w, h) = (d['left'][i], d['top'][i], d['width'][i], d['height'][i])
-                return (x + w//2, y + h//2)  # center of word box
-        return None
     def detect_target_lock(self, img):
         """
         Match the red crosshair target-lock icon inside the is_target_locked ROI.
