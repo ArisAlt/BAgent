@@ -13,7 +13,7 @@ mining:
     count: 3
     hotkeys: [F1, F2, F3]
   # Percentage of cargo fill at which to return to station
-  cargo_threshold: 90
+  cargo_threshold_pct: 90
 
 # Docking and station interaction parameters
 docking:

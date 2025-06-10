@@ -48,10 +48,13 @@ class Ui:
             self.load_capture_region(command['region_name'])
 
     def load_capture_region(self, region_name, yaml_path='regions.yaml'):
-        region = self.region_handler.load(region_name, yaml_path)
+        """Load a named region from the YAML file and set it as capture region."""
+        # Reinitialize handler when a custom YAML path is provided
+        if yaml_path:
+            self.region_handler = RegionHandler(yaml_path)
+        region = self.region_handler.load(region_name)
         if region:
             self.capture_region = region
-            self.region_handler.validate(self.capture_region, save_preview=True, region_name=region_name)
 
     def load_preset_region(self, preset_name):
         presets = ['overview_panel', 'mining_lasers', 'cargo_hold', 'system_status', 'hostile_warning', 'chat_window']

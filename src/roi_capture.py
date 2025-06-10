@@ -121,7 +121,7 @@ def print_menu():
         # Notifications and alerts
         "alerts_notifications",
         # Mining-specific
-        "asteroi_dfield", "asteroid_entry", "mining_lasers","loacation_panel",
+        "asteroid_field", "asteroid_entry", "mining_lasers", "location_panel",
         "overview_tab_mining",  # if you capture the tab selector
         # Cargo operations
         "move_to_station",
