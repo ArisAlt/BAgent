@@ -1,0 +1,10 @@
+numpy
+pillow
+pyautogui
+pytesseract
+opencv-python
+PySide6
+gym
+stable-baselines3
+torch
+pyyaml
