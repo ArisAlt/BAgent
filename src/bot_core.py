@@ -12,6 +12,7 @@ from roi_capture import RegionHandler
 from ocr import OcrEngine
 from cv import CvEngine
 from state_machine import FSM, Event
+from mining_actions import MiningActions
 
 class EveBot:
     def __init__(self, model_path=None):
@@ -24,6 +25,10 @@ class EveBot:
         self.rh = RegionHandler()
         self.ocr = OcrEngine()
         self.cv = CvEngine()
+        self.mining = MiningActions(ui=self.ui,
+                                    region_handler=self.rh,
+                                    ocr=self.ocr,
+                                    cv=self.cv)
         self.gui_logger = None
         self.reward_label = None
         self.integrity_label = None
@@ -67,6 +72,10 @@ class EveBot:
     def _do_mining_routine(self, screen):
         self.log("⛏ Mining routine tick")
 
+        # 0. HOSTILE CHECK
+        if self.mining.detect_hostiles(screen):
+            self.log("⚠️ Hostiles detected")
+
         # 1. CARGO HOLD CHECK
         cargo_box = self.rh.load('mining_cargo_hold_capacity')
         if cargo_box:
@@ -80,6 +89,8 @@ class EveBot:
                 if pct >= 90:
                     self.log("🚀 Cargo full, docking...")
                     self.fsm.on_event(Event.DOCK)
+                    self.mining.warp_to_station()
+                    self.mining.dock_or_undock(dock=True)
                     return
 
         # 2. LASER MODULES
@@ -113,6 +124,7 @@ class EveBot:
 
         if not locked:
             self.log("🔎 No target locked — acquiring new asteroid")
+            self.mining.warp_to_asteroid_belt()
 
             # Sort overview by distance
             box = self.rh.load("overview_distance_header")
@@ -130,13 +142,8 @@ class EveBot:
                 self.log("🪨 Selected nearest asteroid")
                 time.sleep(0.5)
 
-            # Click Approach
-            box = self.rh.load("approach_button")
-            if box:
-                x1, y1, x2, y2 = box
-                pyautogui.click((x1 + x2) // 2, (y1 + y2) // 2)
-                self.log("🛸 Approaching target")
-                time.sleep(0.5)
+            self.mining.approach_asteroid()
+            self.mining.human_like_idle()
 
 
 class BotGui(QtWidgets.QWidget):
