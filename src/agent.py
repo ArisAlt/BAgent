@@ -32,6 +32,8 @@ class AIPilot:
         self.env = env or EveEnv()
         self.fsm = fsm
         self.model = None
+        if model_path is None:
+            model_path = self._find_latest_model()
         if model_path and os.path.exists(model_path):
             self.model = PPO.load(model_path, env=self.env)
 
@@ -192,5 +194,20 @@ class AIPilot:
         Press a single key (or sequence).
         """
         pyautogui.press(key)
+
+    def _find_latest_model(self):
+        """Return path to most recently modified PPO model in logs dir."""
+        log_dir = os.path.join(os.path.dirname(__file__), os.pardir, "logs")
+        if not os.path.isdir(log_dir):
+            return None
+        candidates = [
+            os.path.join(log_dir, f)
+            for f in os.listdir(log_dir)
+            if f.endswith(".zip")
+        ]
+        if not candidates:
+            return None
+        latest = max(candidates, key=os.path.getmtime)
+        return latest
 
     # Optionally, you can add helpers to interpret and execute the returned action dict

@@ -10,6 +10,20 @@ from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 
 from src.env import EveEnv
 
+
+def find_latest_model(log_dir):
+    """Return path to most recently saved model in a directory."""
+    if not os.path.isdir(log_dir):
+        return None
+    candidates = [
+        os.path.join(log_dir, f)
+        for f in os.listdir(log_dir)
+        if f.endswith(".zip")
+    ]
+    if not candidates:
+        return None
+    return max(candidates, key=os.path.getmtime)
+
 def make_monitored_env(log_dir):
     """Create a Monitor-wrapped EVE environment."""
     env = EveEnv()
@@ -26,6 +40,14 @@ def main():
 
     log_dir = "logs"
     os.makedirs(log_dir, exist_ok=True)
+    model_file = os.path.join(log_dir, args.model_path)
+    if args.test and not os.path.exists(model_file):
+        latest = find_latest_model(log_dir)
+        if latest:
+            print(f"Auto-loading latest model: {latest}")
+            model_file = latest
+        else:
+            print("No saved model found.")
 
     if args.train:
         # Create monitored training and eval envs
@@ -77,7 +99,7 @@ def main():
     if args.test:
         # Load model and run one test episode
         env = EveEnv()
-        model = PPO.load(os.path.join("logs", args.model_path), env=env)
+        model = PPO.load(model_file, env=env)
         if args.bc_model and os.path.exists(args.bc_model):
             import torch
             state = torch.load(args.bc_model, map_location="cpu")
