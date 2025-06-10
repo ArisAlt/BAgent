@@ -187,7 +187,7 @@ def capture_region_tool():
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
             fp = os.path.join(sd, f"{name}_{ts}.png")
             cv2.imwrite(fp, crop)
-            print(f"Region '{name}' captured. Screenshot saved: {fp},\n{name} captured. Screenshot saved: {fp}")
+            print(f"Region '{name}' captured. Screenshot saved: {fp}")
 
         elif op == 'list':
             # List regions with absolute coordinates and types
