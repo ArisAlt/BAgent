@@ -11,8 +11,46 @@ except Exception:  # pragma: no cover - skip if cv2 unavailable
     pytest.skip("cv2 not available", allow_module_level=True)
 
 # Make sure Python can import your modules
-import os, sys
+import os, sys, types
 sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
+
+# Patch GUI-dependent modules for headless testing
+pg_mod = types.ModuleType('pyautogui')
+pg_mod.moveTo = lambda *a, **kw: None
+pg_mod.click = lambda *a, **kw: None
+pg_mod.keyDown = lambda *a, **kw: None
+pg_mod.keyUp = lambda *a, **kw: None
+sys.modules.setdefault('pyautogui', pg_mod)
+
+import numpy as np
+cap_mod = types.ModuleType('capture_utils')
+cap_mod.capture_screen = lambda select_region=False: np.zeros((10,10,3), dtype=np.uint8)
+sys.modules.setdefault('capture_utils', cap_mod)
+
+ocr_mod = types.ModuleType('ocr')
+class DummyOcrEngine:
+    def extract_text(self, img):
+        return ""
+ocr_mod.OcrEngine = DummyOcrEngine
+sys.modules.setdefault('ocr', ocr_mod)
+
+cv_mod = types.ModuleType('cv')
+class DummyCvEngine:
+    def detect_elements(self, img, templates=None, threshold=0.8, multi_scale=False, scales=None):
+        return []
+cv_mod.CvEngine = DummyCvEngine
+sys.modules.setdefault('cv', cv_mod)
+
+ui_mod = types.ModuleType('ui')
+class DummyUi:
+    def __init__(self, capture_region=None):
+        self.capture_region = capture_region
+    def capture(self):
+        return np.zeros((10,10,3), dtype=np.uint8)
+    def execute(self, command):
+        pass
+ui_mod.Ui = DummyUi
+sys.modules.setdefault('ui', ui_mod)
 
 from roi_capture import RegionHandler
 from env import EveEnv
