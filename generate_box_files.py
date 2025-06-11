@@ -8,7 +8,6 @@ import glob
 import subprocess
 import argparse
 import shutil
-import pytesseract
 
 
 def main():
@@ -39,8 +38,6 @@ def main():
     )
     args = parser.parse_args()
 
-    if args.tesseract_cmd:
-        pytesseract.pytesseract.tesseract_cmd = args.tesseract_cmd
 
     # Determine tesseract command
     tess_cmd = args.tesseract_cmd or shutil.which("tesseract")

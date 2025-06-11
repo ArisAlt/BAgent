@@ -77,7 +77,7 @@ BAgent/
 ## Requirements
 
 ```txt
-pytesseract
+paddleocr
 opencv-python
 PySide6
 numpy

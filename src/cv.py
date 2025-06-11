@@ -6,11 +6,11 @@ import numpy as np
 from PIL import Image
 import threading
 import queue
-import pytesseract
 import difflib
+from ocr import OcrEngine
 
 class CvEngine:
-    def __init__(self):
+    def __init__(self, ocr=None):
         self.task_queue = queue.Queue()
         self.result_queue = queue.Queue()
         self.worker_thread = threading.Thread(target=self._process_queue)
@@ -18,6 +18,7 @@ class CvEngine:
         self.worker_thread.start()
         self.lock_template = cv2.imread("templates/is_target_locked.png", 0)
         self.lock_threshold = 0.8
+        self.ocr = ocr or OcrEngine()
 
     def detect_elements(self, img, templates, threshold=0.8, multi_scale=False, scales=None):
         """
@@ -83,14 +84,14 @@ class CvEngine:
         ore_names = [o.lower() for o in (ore_names or default_ores)]
 
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        d = pytesseract.image_to_data(gray, output_type=pytesseract.Output.DICT)
+        data = self.ocr.extract_data(gray)
 
-        for i in range(len(d['text'])):
-            word = d['text'][i].strip().lower()
+        for entry in data:
+            word = entry['text'].strip().lower()
             if not word:
                 continue
             if word in ore_names or difflib.get_close_matches(word, ore_names, n=1, cutoff=0.7):
-                x, y, w, h = d['left'][i], d['top'][i], d['width'][i], d['height'][i]
+                x, y, w, h = entry['left'], entry['top'], entry['width'], entry['height']
                 return (x + w // 2, y + h // 2)
         return None
 
