@@ -1,4 +1,4 @@
-# version: 0.7.0
+# version: 0.8.0
 # path: src/capture_utils.py
 
 import cv2
@@ -35,7 +35,19 @@ def capture_screen(select_region=False, window_title="EVE - CitizenZero"):
 
     if win32gui is None:
         # headless fallback for tests
-        return np.zeros((10, 10, 3), dtype=np.uint8)
+        img = np.zeros((10, 10, 3), dtype=np.uint8)
+        if select_region:
+            roi = cv2.selectROI("Select Region", img, showCrosshair=True, fromCenter=False)
+            if hasattr(cv2, "destroyWindow"):
+                try:
+                    cv2.destroyWindow("Select Region")
+                except Exception:
+                    pass
+            x, y, w, h = roi
+            if w == 0 or h == 0:
+                return None
+            return (x, y, x + w, y + h)
+        return img
 
     try:
         (left, top, right, bottom), hwnd = get_window_rect(window_title)
@@ -79,7 +91,21 @@ def capture_screen(select_region=False, window_title="EVE - CitizenZero"):
     mfc_dc.DeleteDC()
     win32gui.ReleaseDC(hwnd, hwnd_dc)
 
-    return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+    img_bgr = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+
+    if select_region:
+        roi = cv2.selectROI("Select Region", img_bgr, showCrosshair=True, fromCenter=False)
+        if hasattr(cv2, "destroyWindow"):
+            try:
+                cv2.destroyWindow("Select Region")
+            except Exception:
+                pass
+        x, y, w, h = roi
+        if w == 0 or h == 0:
+            return None
+        return (x, y, x + w, y + h)
+
+    return img_bgr
 
 # --- Test directly ---
 if __name__ == "__main__":
