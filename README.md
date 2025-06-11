@@ -1,5 +1,5 @@
 # BAgent
-<!-- version: 0.4.5 | path: README.md -->
+<!-- version: 0.4.6 | path: README.md -->
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
 
@@ -45,6 +45,14 @@ from src.agent import AIPilot
 pilot = AIPilot()
 pilot.train_bc_from_data('logs/demonstrations/log.jsonl', 'bc_clf.joblib')
 action_idx = pilot.load_and_predict({'obs': [0]*pilot.env.observation_space.shape[0]})
+```
+
+### Running BC Inference
+
+Execute a trained behavior cloning model without launching the GUI:
+
+```bash
+python -m src.bot_core --mode bc_inference --bc_model bc_clf.joblib
 ```
 
 ## Session Replay
