@@ -1,17 +1,18 @@
-# version: 0.2.4
+# version: 0.2.5
 # path: src/roi_capture.py
 
 import os
 import sys
+
+BASE_DIR = os.path.dirname(__file__)
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
 import cv2
 import yaml
 import numpy as np
 from datetime import datetime
 from capture_utils import capture_screen
-
-BASE_DIR = os.path.dirname(__file__)
-if BASE_DIR not in sys.path:
-    sys.path.insert(0, BASE_DIR)
 
 class RegionHandler:
     YAML_FILENAME = "regions.yaml"
