@@ -1,8 +1,9 @@
-# version: 0.5.1
+# version: 0.5.2
 # path: src/bot_core.py
 
 import sys
 import time
+import argparse
 import re
 import pyautogui
 import cv2
@@ -194,8 +195,38 @@ class BotGui(QtWidgets.QWidget):
             self.log_area.append("Invalid action index")
 
 
+def main():
+    parser = argparse.ArgumentParser(description="Run EveBot or BC inference")
+    parser.add_argument(
+        "--mode",
+        choices=["gui", "bc_inference"],
+        default="gui",
+        help="Execution mode",
+    )
+    parser.add_argument(
+        "--bc_model",
+        type=str,
+        default=None,
+        help="Path to a trained BC model for inference",
+    )
+    args = parser.parse_args()
+
+    if args.mode == "gui":
+        app = QtWidgets.QApplication(sys.argv)
+        window = BotGui()
+        window.show()
+        sys.exit(app.exec())
+
+    if args.mode == "bc_inference":
+        pilot = AIPilot(bc_model_path=args.bc_model)
+        env = pilot.env
+        obs = env.reset()
+        done = False
+        while not done:
+            action = pilot.bc_predict(obs)
+            obs, reward, done, _ = env.step(action)
+            print(f"Action: {action}, Reward: {reward:.2f}")
+
+
 if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    window = BotGui()
-    window.show()
-    sys.exit(app.exec())
+    main()
