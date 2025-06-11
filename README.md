@@ -51,4 +51,15 @@ python generate_box_files.py -i training_texts_dir/images -b training_texts_dir/
 
 If Tesseract is not on your `PATH`, provide the path via `--tesseract-cmd` or
 set the `TESSERACT_CMD` environment variable. Windows users can run
-`add_tesseract_to_path.bat` with administrator rights to add it automatically.
+`add_tesseract_to_path.bat` with administrator rights to add Tesseract to
+`PATH` and set the `TESSERACT_CMD` variable automatically.
+
+### OCR Configuration
+
+`OcrEngine` also respects the `TESSERACT_CMD` variable or a `tesseract_cmd`
+argument when instantiated:
+
+```python
+from ocr import OcrEngine
+ocr = OcrEngine(tesseract_cmd="/usr/local/bin/tesseract")
+```
