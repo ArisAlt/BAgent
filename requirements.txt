@@ -1,10 +1,12 @@
 numpy
 pillow
 pyautogui
-pytesseract
+paddleocr
 opencv-python
 PySide6
 gym
 stable-baselines3
 torch
 pyyaml
+pynput
+scikit-learn

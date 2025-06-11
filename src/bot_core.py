@@ -1,12 +1,16 @@
-# version: 0.5.1
+# version: 0.6.0
 # path: src/bot_core.py
 
 import sys
 import time
+import argparse
 import re
 import pyautogui
 import cv2
 from PySide6 import QtWidgets, QtCore, QtGui
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 from roi_capture import RegionHandler
 from ocr import OcrEngine
@@ -36,9 +40,11 @@ class EveBot:
         self.reward_label = None
         self.integrity_label = None
 
-    def log(self, message):
+        self.mode = "auto"
+        self.pending_action = None
+    def log(self, message, level="info"):
+        getattr(logger, level, logger.info)(message)
         timestamped = f"[{time.strftime('%H:%M:%S')}] {message}"
-        print(timestamped)
         if self.gui_logger:
             self.gui_logger.append(timestamped)
 
@@ -61,9 +67,24 @@ class EveBot:
         if self.reward_label:
             self.reward_label.setText(f"Reward: {reward:.2f}")
 
+    def confirm_suggestion(self):
+        if self.pending_action is not None:
+            self.manual_action(self.pending_action)
+            self.pending_action = None
+
     def _main_loop(self):
         import capture_utils
         while self.running:
+            if self.mode == "manual":
+                time.sleep(0.1)
+                continue
+            if self.mode == "assist":
+                if self.pending_action is None:
+                    obs = self.env.get_observation()["obs"]
+                    self.pending_action = self.agent.bc_predict(obs)
+                    self.log(f"Suggested action {self.pending_action}")
+                time.sleep(0.1)
+                continue
             screen = capture_utils.capture_screen(select_region=False)
             if self.fsm.state.name == 'MINING':
                 self._do_mining_routine(screen)
@@ -155,36 +176,59 @@ class EveBot:
 class BotGui(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("EVE Bot Controller")
+        if hasattr(self, "setWindowTitle"):
+            self.setWindowTitle("EVE Bot Controller")
         layout = QtWidgets.QVBoxLayout(self)
+        add = getattr(layout, "addWidget", None)
 
         self.log_area = QtWidgets.QTextEdit()
-        self.log_area.setReadOnly(True)
-        layout.addWidget(self.log_area)
+        if hasattr(self.log_area, "setReadOnly"):
+            self.log_area.setReadOnly(True)
+        if add:
+            add(self.log_area)
 
         self.reward_label = QtWidgets.QLabel("Reward: 0.0")
         self.integrity_label = QtWidgets.QLabel("Integrity: 100")
-        layout.addWidget(self.reward_label)
-        layout.addWidget(self.integrity_label)
+        if add:
+            add(self.reward_label)
+            add(self.integrity_label)
 
         self.start_btn = QtWidgets.QPushButton("Start Bot")
         self.stop_btn = QtWidgets.QPushButton("Stop Bot")
-        layout.addWidget(self.start_btn)
-        layout.addWidget(self.stop_btn)
+        if add:
+            add(self.start_btn)
+            add(self.stop_btn)
 
         self.override_input = QtWidgets.QLineEdit()
-        self.override_input.setPlaceholderText("Action index")
+        if hasattr(self.override_input, "setPlaceholderText"):
+            self.override_input.setPlaceholderText("Action index")
         self.override_btn = QtWidgets.QPushButton("Send Manual Action")
-        layout.addWidget(self.override_input)
-        layout.addWidget(self.override_btn)
+        if add:
+            add(self.override_input)
+            add(self.override_btn)
+        self.mode_label = QtWidgets.QLabel("Mode: Auto")
+        if add:
+            add(self.mode_label)
+        if hasattr(QtWidgets, "QShortcut"):
+            QtWidgets.QShortcut(QtGui.QKeySequence("F1"), self, activated=lambda: self._switch_mode("auto"))
+            QtWidgets.QShortcut(QtGui.QKeySequence("F2"), self, activated=lambda: self._switch_mode("manual"))
+            QtWidgets.QShortcut(QtGui.QKeySequence("F3"), self, activated=lambda: self._switch_mode("assist"))
+            QtWidgets.QShortcut(QtGui.QKeySequence("F4"), self, activated=self.bot.confirm_suggestion)
 
         self.bot = EveBot(model_path=None)
         self.bot.gui_logger = self.log_area
         self.bot.reward_label = self.reward_label
 
-        self.start_btn.clicked.connect(self.bot.start)
-        self.stop_btn.clicked.connect(self.bot.stop)
-        self.override_btn.clicked.connect(self._send_manual)
+        if hasattr(self.start_btn, "clicked") and hasattr(self.start_btn.clicked, "connect"):
+            self.start_btn.clicked.connect(self.bot.start)
+        if hasattr(self.stop_btn, "clicked") and hasattr(self.stop_btn.clicked, "connect"):
+            self.stop_btn.clicked.connect(self.bot.stop)
+        if hasattr(self.override_btn, "clicked") and hasattr(self.override_btn.clicked, "connect"):
+            self.override_btn.clicked.connect(self._send_manual)
+    def _switch_mode(self, mode):
+        self.bot.set_mode(mode)
+        if hasattr(self.mode_label, "setText"):
+            self.mode_label.setText(f"Mode: {mode.capitalize()}")
 
     def _send_manual(self):
         text = self.override_input.text()
@@ -194,8 +238,38 @@ class BotGui(QtWidgets.QWidget):
             self.log_area.append("Invalid action index")
 
 
+def main():
+    parser = argparse.ArgumentParser(description="Run EveBot or BC inference")
+    parser.add_argument(
+        "--mode",
+        choices=["gui", "bc_inference"],
+        default="gui",
+        help="Execution mode",
+    )
+    parser.add_argument(
+        "--bc_model",
+        type=str,
+        default=None,
+        help="Path to a trained BC model for inference",
+    )
+    args = parser.parse_args()
+
+    if args.mode == "gui":
+        app = QtWidgets.QApplication(sys.argv)
+        window = BotGui()
+        window.show()
+        sys.exit(app.exec())
+
+    if args.mode == "bc_inference":
+        pilot = AIPilot(bc_model_path=args.bc_model)
+        env = pilot.env
+        obs = env.reset()
+        done = False
+        while not done:
+            action = pilot.bc_predict(obs)
+            obs, reward, done, _ = env.step(action)
+            logger.info(f"Action: {action}, Reward: {reward:.2f}")
+
+
 if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    window = BotGui()
-    window.show()
-    sys.exit(app.exec())
+    main()

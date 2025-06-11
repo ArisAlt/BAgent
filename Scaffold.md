@@ -1,6 +1,6 @@
 # EVE Online Bot Project Scaffold
 
-> version: 0.4.4
+> version: 0.4.8
 > updated: Integrated dynamic ROI types, enhanced env, ROI capture tool, GUI, data recorder, pretraining pipeline
 
 ---
@@ -9,13 +9,14 @@
 ```
 BAgent/
 ├── src/
-│   ├── bot_core.py       # version: 0.5.0 | path: src/bot_core.py
+│   ├── bot_core.py       # version: 0.6.0 | path: src/bot_core.py
 │   ├── env.py            # version: 0.4.4 | path: src/env.py
-│   ├── agent.py          # version: 0.3.0 | path: src/agent.py
+│   ├── agent.py          # version: 0.5.0 | path: src/agent.py
 │   ├── ocr.py            # version: 0.3.4 | path: src/ocr.py  
 │   ├── cv.py             # version: 0.3.2 | path: src/cv.py  
 │   ├── ui.py             # version: 0.3.7 | path: src/ui.py  
-│   ├── capture_utils.py  # version: 0.1.0 | path: src/capture_utils.py
+│   ├── capture_utils.py  # version: 0.8.1 | path: src/capture_utils.py
+│   ├── logger.py         # version: 0.1.0 | path: src/logger.py
 │   ├── roi_capture.py    # version: 0.1.8 | path: src/roi_capture.py
 │   ├── mining_actions.py # version: 0.1.0 | path: src/mining_actions.py
 │   ├── ocr_finetune.py   # version: 0.1.0 | path: src/ocr_finetune.py
@@ -24,11 +25,13 @@ BAgent/
 │   ├── config/
 │   │   └── agent_config.yaml # version: 0.1.0 | path: src/config/agent_config.yaml
 │   └── roi_screenshots/  # ROI screenshot samples
-├── run_start.py          # version: 0.2.0 | path: run_start.py  
-├── data_recorder.py      # version: 0.3.0 | path: data_recorder.py  
+├── run_start.py          # version: 0.3.2 | path: run_start.py
+├── data_recorder.py      # version: 0.4.0 | path: data_recorder.py
 ├── export_ocr_samples.py # version: 0.1.0 | path: export_ocr_samples.py
 ├── generate_box_files.py # version: 0.1.0 | path: generate_box_files.py
-├── pre_train_data.py     # version: 0.1.0 | path: pre_train_data.py
+├── pre_train_data.py     # version: 0.3.0 | path: pre_train_data.py
+├── replay_session.py     # version: 0.3.0 | path: replay_session.py
+├── replay_correction.py     # version: 0.1.0 | path: replay_correction.py
 ├── add_tesseract_to_path.bat # helper script to set PATH on Windows
 ├── ets.txt               # sample training commands
 ├── promts.txt            # project prompts and notes
@@ -36,8 +39,9 @@ BAgent/
 ├── requirements.txt      # Python dependencies
 ├── test_env.py           # version: 0.1.1 | path: test_env.py
 ├── tests/                # test suite
+│   └── test_gui_cli_integration.py # version: 0.1.0 | path: tests/test_gui_cli_integration.py
 ├── training_texts_dir/   # OCR training data
-└── README.md             # version: 0.4.1 | path: README.md
+└── README.md             # version: 0.4.9 | path: README.md
 ```
 
 ---
@@ -54,8 +58,16 @@ BAgent/
   - `data_recorder.py` supports manual/automatic demo collection.
   - Tools for dataset generation and preprocessing.
   - CLI entry via `run_start.py` and PySide6 GUI support.
-- **Testing & Validation:**  
-  - `test_env.py` for quick ROI and env step sanity checks.  
+  - `agent.py` provides BC training (`train_bc_from_data`) and inference (`load_and_predict`).
+  - `bot_core.py` can run BC models via `--mode bc_inference`.
+  - `replay_session.py` visualizes demonstrations and outputs accuracy and confusion metrics.
+  - `bot_core.py` now supports Auto, Manual and Assistive modes toggled by F1-F3, with F4 confirming suggestions.
+  - `replay_correction.py` allows correcting actions during replay and marks samples with higher weight.
+  - `pre_train_data.py` now standardizes observations with `StandardScaler`
+    and creates validation splits via `train_test_split` before training the PyTorch model.
+- **Testing & Validation:**
+  - `test_env.py` for quick ROI and env step sanity checks.
+  - `test_gui_cli_integration.py` exercises ROI/UI functionality via the GUI and CLI.
 
 ---
 
@@ -77,7 +89,7 @@ BAgent/
 ## Requirements
 
 ```txt
-pytesseract
+paddleocr
 opencv-python
 PySide6
 numpy
@@ -151,10 +163,11 @@ pyyaml
   - Screen capture separated into `capture_utils.py`.
   - ROI capture and validation logic moved to `roi_capture.py`.
 - **Data Recording & Pretraining**:
-  - `data_recorder.py` allows manual/automatic action logging.
+  - `data_recorder.py` logs frame screenshots, observations and semantic actions.
   - Scripts for behavior cloning from recorded data.
-  - Placeholder `agent.py` for PPO model management.
+  - `agent.py` includes BC training and inference helpers.
   - `bot_core.py` central bot loop connecting all modules.
+  - `test_gui_cli_integration.py` added for GUI and CLI integration testing.
 
 ---
 

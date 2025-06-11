@@ -1,16 +1,73 @@
-# version: 0.3.0
+# version: 0.4.0
 # path: data_recorder.py
 
 import pickle
 import random
 import os
+import json
+from datetime import datetime
+import cv2
+from pynput import mouse, keyboard
+from threading import Event
 from src.env import EveEnv
 from stable_baselines3 import PPO
+
+
+def _map_click(env, x, y):
+    for idx, (typ, target) in enumerate(env.actions):
+        if typ == 'click':
+            coords = env.region_handler.get_coords(target)
+            if coords and coords[0] <= x <= coords[2] and coords[1] <= y <= coords[3]:
+                return idx, f'click_{target}'
+    return None, None
+
+
+def _map_key(env, key_name):
+    for idx, (typ, target) in enumerate(env.actions):
+        if typ == 'keypress' and key_name == target:
+            return idx, f'keypress_{target}'
+    return None, None
+
+
+def _wait_for_event(env):
+    """Block until a relevant mouse or keyboard event occurs."""
+    result = {}
+    done = Event()
+
+    def on_click(x, y, button, pressed):
+        if pressed and not done.is_set():
+            idx, label = _map_click(env, x, y)
+            if idx is not None:
+                result['data'] = (idx, label)
+                done.set()
+                return False
+
+    def on_press(key):
+        if done.is_set():
+            return False
+        try:
+            name = key.char.lower()
+        except AttributeError:
+            name = key.name.lower()
+        idx, label = _map_key(env, name)
+        if idx is not None:
+            result['data'] = (idx, label)
+            done.set()
+            return False
+
+    with mouse.Listener(on_click=on_click) as ml, keyboard.Listener(on_press=on_press) as kl:
+        done.wait()
+    ml.stop()
+    kl.stop()
+    return result['data']
 
 
 def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True, model_path=None):
     env = EveEnv()
     demo_buffer = []
+    demo_dir = os.path.join('logs', 'demonstrations')
+    os.makedirs(demo_dir, exist_ok=True)
+    log_path = os.path.join(demo_dir, 'log.jsonl')
     model = None
     if model_path and os.path.exists(model_path):
         model = PPO.load(model_path, env=env)
@@ -19,23 +76,34 @@ def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True, model_
     print(f"Starting {mode} data recording for {num_samples} samples...")
     obs = env.reset()
 
-    for i in range(num_samples):
-        if manual:
-            action = int(input(f"Step {i+1}/{num_samples} - Enter action (0 to {env.action_space.n - 1}): "))
-        elif model:
-            action, _ = model.predict(obs, deterministic=True)
-            action = int(action)
-        else:
-            action = random.randint(0, env.action_space.n - 1)
-        obs, reward, done, info = env.step(action)
-        demo_buffer.append((obs, action))
-        print(f"Recorded: Step={i+1}, Action={action}, Reward={reward}")
-        if done:
-            obs = env.reset()
+    with open(log_path, 'a') as log_file:
+        for i in range(num_samples):
+            if manual:
+                idx, label = _wait_for_event(env)
+                action = idx
+            elif model:
+                action, _ = model.predict(obs, deterministic=True)
+                action = int(action)
+                label = f"model_{action}"
+            else:
+                action = random.randint(0, env.action_space.n - 1)
+                label = f"random_{action}"
+
+            frame = env.ui.capture()
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            fp = os.path.join(demo_dir, f"{ts}.png")
+            cv2.imwrite(fp, frame)
+            state = env.get_observation()
+            log_file.write(json.dumps({'frame': fp, 'action': label, 'state': state}) + "\n")
+
+            obs, reward, done, info = env.step(action)
+            demo_buffer.append((obs, action))
+            print(f"Recorded: Step={i+1}, Action={label}, Reward={reward}")
+            if done:
+                obs = env.reset()
 
     with open(filename, 'wb') as f:
         pickle.dump(demo_buffer, f)
-
     print(f"Data recording complete. Saved to {filename}")
 
 

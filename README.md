@@ -1,4 +1,5 @@
 # BAgent
+<!-- version: 0.5.1 | path: README.md -->
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
 
@@ -14,24 +15,86 @@ Run tests with:
 pytest -q
 ```
 
+### Debug Logging
+
+Set the environment variable `LOG_LEVEL` or pass `--log-level` to `run_start.py`
+to control verbosity. Logs follow the format `[HH:MM:SS] LEVEL - message`.
+
+Additional integration tests for ROI/UI via the GUI and CLI can be executed with:
+
+```bash
+pytest tests/test_gui_cli_integration.py -q
+```
+## Human-in-the-loop Modes
+
+During runtime press **F1** for Auto, **F2** for Manual, and **F3** for Assistive mode. In Assistive mode press **F4** to execute the suggested action.
+
 ## Behavior Cloning Pretraining
 
-1. Record demonstrations:
+1. Record demonstrations (frames + state logs saved under `logs/demonstrations/`):
 
 ```bash
 python data_recorder.py --manual False
 ```
 
-2. Train the BC model:
+2. Train the BC model. `pre_train_data.py` uses scikit-learn's
+   `StandardScaler` and `train_test_split` to preprocess state features and
+   create a validation split:
 
 ```bash
-python pre_train_data.py --demos demo_buffer.pkl --out bc_model.pt
+python pre_train_data.py --demos logs/demonstrations/log.jsonl --out bc_model.pt
 ```
+
+The script standardizes observations, splits the data into train/validation
+sets and trains a PyTorch model. Both the model weights and fitted scaler are
+saved for later inference.
 
 3. Fine-tune with PPO (optional `--bc_model`):
 
 ```bash
 python run_start.py --train --bc_model bc_model.pt --timesteps 50000
+```
+
+4. Train a quick MLP-based policy directly from the demonstration log:
+
+```python
+from src.agent import AIPilot
+pilot = AIPilot()
+pilot.train_bc_from_data('logs/demonstrations/log.jsonl', 'bc_clf.joblib')
+action_idx = pilot.load_and_predict({'obs': [0]*pilot.env.observation_space.shape[0]})
+```
+
+### Running BC Inference
+
+Execute a trained behavior cloning model without launching the GUI:
+
+```bash
+python -m src.bot_core --mode bc_inference --bc_model bc_clf.joblib
+```
+
+## Session Replay
+
+Visualize recorded demonstrations and compare against a trained model using
+`replay_session.py`. The script overlays predicted vs. actual actions and writes
+validation metrics to a JSON file:
+
+```bash
+python replay_session.py --log logs/demonstrations/log.jsonl --delay 300 \
+    --model bc_model.pt --accuracy-out metrics.json
+```
+
+During playback the frame, environment state and predicted action confidence are
+displayed. Mismatched predictions are highlighted in red. After exiting, a JSON
+file is produced containing overall accuracy, a confusion matrix and per-action
+statistics. Press **q** to exit the viewer.
+
+
+## Replay Correction
+
+Use `replay_correction.py` to modify incorrect actions during playback. Corrected samples are saved with a higher training weight.
+
+```bash
+python replay_correction.py --log logs/demonstrations/log.jsonl --out corrected.jsonl --model bc_model.pt
 ```
 
 ## Mining Helpers
@@ -51,4 +114,16 @@ python generate_box_files.py -i training_texts_dir/images -b training_texts_dir/
 
 If Tesseract is not on your `PATH`, provide the path via `--tesseract-cmd` or
 set the `TESSERACT_CMD` environment variable. Windows users can run
-`add_tesseract_to_path.bat` with administrator rights to add it automatically.
+`add_tesseract_to_path.bat` with administrator rights to add Tesseract to
+`PATH` and set the `TESSERACT_CMD` variable automatically.
+
+### OCR Configuration
+
+`OcrEngine` uses [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) for
+text recognition. Once the package is installed no additional configuration is
+required:
+
+```python
+from ocr import OcrEngine
+ocr = OcrEngine()
+```

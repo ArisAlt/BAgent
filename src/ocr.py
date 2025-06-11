@@ -1,8 +1,8 @@
-# version: 0.3.4
+# version: 0.3.5
 # path: src/ocr.py
 
 import numpy as np
-from PIL import Image, ImageGrab
+from PIL import Image
 import threading
 import queue
 
@@ -14,22 +14,11 @@ except Exception:
     _has_paddle = False
 
 class OcrEngine:
-    def __init__(self, use_angle_cls=True, lang='en', use_paddle=True):
-        """
-        Initialize OCR engine: try PaddleOCR if available and requested, else use pytesseract.
-        """
-        self.use_paddle = use_paddle and _has_paddle
-        if self.use_paddle:
-            self.ocr = PaddleOCR(use_angle_cls=use_angle_cls, lang=lang)
-        # Dynamically import pytesseract to avoid pandas import at top-level
-        try:
-            import pytesseract
-            self.pytesseract = pytesseract
-            # configure tesseract executable path as needed
-            self.pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
-            self.has_tesseract = True
-        except Exception:
-            self.has_tesseract = False
+    def __init__(self, use_angle_cls=True, lang='en'):
+        """Initialize the PaddleOCR engine."""
+        if not _has_paddle:
+            raise ImportError("PaddleOCR is not installed")
+        self.ocr = PaddleOCR(use_angle_cls=use_angle_cls, lang=lang)
         # Setup threading queues
         self.task_queue = queue.Queue()
         self.result_queue = queue.Queue()
@@ -38,28 +27,43 @@ class OcrEngine:
         self.worker_thread.start()
 
     def extract_text(self, img):
-        """
-        Extract text from image using selected OCR engine.
-        """
-        if isinstance(img, np.ndarray):
-            pil_img = Image.fromarray(img)
+        """Extract text from an image."""
+        if isinstance(img, Image.Image):
+            arr = np.array(img)
         else:
-            pil_img = img
-        # Use PaddleOCR if available
-        if self.use_paddle:
-            arr = np.array(pil_img)
-            result = self.ocr.ocr(arr, cls=True)
-            lines = []
-            for line in result[0]:
-                text, conf = line[1]
-                if conf > 0.5:
-                    lines.append(text)
-            return '\n'.join(lines)
-        # Fallback to pytesseract if available
-        if self.has_tesseract:
-            return self.pytesseract.image_to_string(pil_img)
-        # No OCR available
-        return ""
+            arr = img
+        result = self.ocr.ocr(arr, cls=True)
+        lines = []
+        for line in result[0]:
+            text, conf = line[1]
+            if conf > 0.5:
+                lines.append(text)
+        return '\n'.join(lines)
+
+    def extract_data(self, img, conf_threshold=0.5):
+        """Return OCR results with bounding boxes similar to pytesseract."""
+        if isinstance(img, Image.Image):
+            arr = np.array(img)
+        else:
+            arr = img
+        result = self.ocr.ocr(arr, cls=True)
+        boxes = []
+        for line in result[0]:
+            box, (text, conf) = line
+            if conf < conf_threshold:
+                continue
+            xs = [pt[0] for pt in box]
+            ys = [pt[1] for pt in box]
+            left, top = min(xs), min(ys)
+            width, height = max(xs) - left, max(ys) - top
+            boxes.append({
+                'text': text,
+                'left': int(left),
+                'top': int(top),
+                'width': int(width),
+                'height': int(height)
+            })
+        return boxes
 
     def extract_text_batch(self, images):
         """
