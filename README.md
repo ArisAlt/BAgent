@@ -1,5 +1,5 @@
 # BAgent
-<!-- version: 0.4.7 | path: README.md -->
+<!-- version: 0.4.8 | path: README.md -->
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
 
@@ -29,14 +29,17 @@ pytest tests/test_gui_cli_integration.py -q
 python data_recorder.py --manual False
 ```
 
-2. Train the BC model (reads the jsonl log and normalizes observations):
+2. Train the BC model. `pre_train_data.py` uses scikit-learn's
+   `StandardScaler` and `train_test_split` to preprocess state features and
+   create a validation split:
 
 ```bash
 python pre_train_data.py --demos logs/demonstrations/log.jsonl --out bc_model.pt
 ```
 
-The loader converts action labels to one-hot vectors and returns
-`[image_tensor, state_tensor]` pairs suitable for a hybrid CNN/MLP model.
+The script standardizes observations, splits the data into train/validation
+sets and trains a PyTorch model. Both the model weights and fitted scaler are
+saved for later inference.
 
 3. Fine-tune with PPO (optional `--bc_model`):
 
