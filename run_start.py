@@ -1,12 +1,17 @@
 # run_start.py
-# version: 0.3.1
+# version: 0.3.2
+# path: run_start.py
 
 import os
 import argparse
 import sys
+import logging
+from src.logger import get_logger
 
 # Ensure local src modules are importable when running directly
 sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
+
+logger = get_logger(__name__)
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
@@ -40,7 +45,11 @@ def main():
     parser.add_argument("--timesteps", type=int, default=50_000, help="Number of training timesteps")
     parser.add_argument("--model_path", type=str, default="eve_bot_model", help="Path to save/load model")
     parser.add_argument("--bc_model", type=str, default=None, help="Pretrained behavior cloning model")
+    parser.add_argument("--log-level", type=str, default="INFO", help="Logging level")
     args = parser.parse_args()
+
+    # Update logger level
+    logger.setLevel(getattr(logging, args.log_level.upper(), logging.INFO))
 
     log_dir = "logs"
     os.makedirs(log_dir, exist_ok=True)
@@ -48,10 +57,10 @@ def main():
     if args.test and not os.path.exists(model_file):
         latest = find_latest_model(log_dir)
         if latest:
-            print(f"Auto-loading latest model: {latest}")
+            logger.info(f"Auto-loading latest model: {latest}")
             model_file = latest
         else:
-            print("No saved model found.")
+            logger.warning("No saved model found.")
 
     if args.train:
         # Create monitored training and eval envs
@@ -88,7 +97,7 @@ def main():
                 if k in policy_state and state[k].shape == policy_state[k].shape:
                     policy_state[k] = state[k]
             model.policy.load_state_dict(policy_state)
-            print(f"Loaded BC weights from {args.bc_model}")
+            logger.info(f"Loaded BC weights from {args.bc_model}")
 
         # Train with all callbacks
         model.learn(
@@ -98,7 +107,7 @@ def main():
         )
         model.save(os.path.join(log_dir, args.model_path))
 
-        print(f"Training complete. Models & logs in '{log_dir}/'")
+        logger.info(f"Training complete. Models & logs in '{log_dir}/'")
 
     if args.test:
         # Load model and run one test episode
@@ -117,8 +126,8 @@ def main():
         while not done:
             action, _ = model.predict(obs, deterministic=True)
             obs, reward, done, info = env.step(action)
-            print(f"Action: {action}, Reward: {reward:.2f}, Done: {done}")
-        print("Test run complete.")
+            logger.info(f"Action: {action}, Reward: {reward:.2f}, Done: {done}")
+        logger.info("Test run complete.")
 
 if __name__ == "__main__":
     main()

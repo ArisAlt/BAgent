@@ -1,10 +1,11 @@
-# version: 0.8.0
+# version: 0.8.1
 # path: src/capture_utils.py
 
 import cv2
 import numpy as np
 import ctypes
 from ctypes.wintypes import RECT
+from logger import get_logger
 try:
     import win32gui
     import win32ui
@@ -12,6 +13,8 @@ try:
 except Exception:  # pragma: no cover - allow headless testing
     win32gui = win32ui = win32con = None
 import time
+
+logger = get_logger(__name__)
 
 # Make the process DPI aware so coordinates match real pixels (Windows only)
 if hasattr(ctypes, "windll") and win32gui is not None:
@@ -52,7 +55,7 @@ def capture_screen(select_region=False, window_title="EVE - CitizenZero"):
     try:
         (left, top, right, bottom), hwnd = get_window_rect(window_title)
     except RuntimeError as e:
-        print(str(e))
+        logger.error(str(e))
         return None
 
     width = right - left
@@ -65,7 +68,7 @@ def capture_screen(select_region=False, window_title="EVE - CitizenZero"):
             win32gui.SetForegroundWindow(hwnd)
             time.sleep(0.3)
         except Exception as e:
-            print(f"[Capture] ⚠️ Could not bring to foreground: {e}")
+            logger.warning(f"[Capture] Could not bring to foreground: {e}")
         _first_foreground = False
 
     hwnd_dc = win32gui.GetWindowDC(hwnd)
@@ -78,7 +81,7 @@ def capture_screen(select_region=False, window_title="EVE - CitizenZero"):
     # Try PrintWindow
     result = ctypes.windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), 0)
     if result != 1:
-        print("[Capture] ⚠️ PrintWindow failed. Screen may be black.")
+        logger.warning("[Capture] PrintWindow failed. Screen may be black.")
         return None
 
     bmp_info = bmp.GetInfo()
@@ -115,4 +118,4 @@ if __name__ == "__main__":
         cv2.waitKey(0)
         cv2.destroyAllWindows()
     else:
-        print("❌ Could not capture.")
+        logger.error("Could not capture.")
