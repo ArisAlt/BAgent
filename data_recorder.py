@@ -1,4 +1,4 @@
-# version: 0.3.0
+# version: 0.4.0
 # path: data_recorder.py
 
 import pickle
@@ -65,8 +65,9 @@ def _wait_for_event(env):
 def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True, model_path=None):
     env = EveEnv()
     demo_buffer = []
-    os.makedirs('recordings/frames', exist_ok=True)
-    log_path = os.path.join('recordings', 'log.jsonl')
+    demo_dir = os.path.join('logs', 'demonstrations')
+    os.makedirs(demo_dir, exist_ok=True)
+    log_path = os.path.join(demo_dir, 'log.jsonl')
     model = None
     if model_path and os.path.exists(model_path):
         model = PPO.load(model_path, env=env)
@@ -90,13 +91,9 @@ def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True, model_
 
             frame = env.ui.capture()
             ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-            fp = os.path.join('recordings/frames', f"{ts}.png")
+            fp = os.path.join(demo_dir, f"{ts}.png")
             cv2.imwrite(fp, frame)
-            state = {
-                'obs': obs.tolist(),
-                'prev_volume': getattr(env, 'prev_volume', None),
-                'cargo_capacity': getattr(env, 'cargo_capacity', None)
-            }
+            state = env.get_observation()
             log_file.write(json.dumps({'frame': fp, 'action': label, 'state': state}) + "\n")
 
             obs, reward, done, info = env.step(action)
