@@ -1,5 +1,5 @@
 # BAgent
-<!-- version: 0.5.0 | path: README.md -->
+<!-- version: 0.5.1 | path: README.md -->
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
 
@@ -25,6 +25,9 @@ Additional integration tests for ROI/UI via the GUI and CLI can be executed with
 ```bash
 pytest tests/test_gui_cli_integration.py -q
 ```
+## Human-in-the-loop Modes
+
+During runtime press **F1** for Auto, **F2** for Manual, and **F3** for Assistive mode. In Assistive mode press **F4** to execute the suggested action.
 
 ## Behavior Cloning Pretraining
 
