@@ -1,3 +1,6 @@
+# version: 0.3.0
+# path: replay_session.py
+
 import argparse
 import json
 from typing import Optional, Tuple
@@ -72,6 +75,9 @@ def replay(log_file: str, delay: int = 500, model_path: Optional[str] = None,
 
     correct = 0
     total = 0
+    n_actions = env.action_space.n
+    conf_matrix = np.zeros((n_actions, n_actions), dtype=int)
+    per_action = {i: {"correct": 0, "total": 0} for i in range(n_actions)}
 
     with open(log_file, "r") as f:
         for line in f:
@@ -87,15 +93,21 @@ def replay(log_file: str, delay: int = 500, model_path: Optional[str] = None,
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
 
             if model and "obs" in state:
-                pred_idx, conf = _predict(model, model_type,
-                                          np.array(state["obs"],
-                                                   dtype=np.float32))
+                pred_idx, conf = _predict(
+                    model, model_type, np.array(state["obs"], dtype=np.float32)
+                )
                 pred_label = _label_from_idx(env, pred_idx)
-                total += 1
                 actual_idx = _label_to_idx(env, label)
-                if actual_idx is not None and actual_idx == pred_idx:
-                    correct += 1
-                    color = (0, 200, 0)
+                if actual_idx is not None:
+                    total += 1
+                    conf_matrix[actual_idx, pred_idx] += 1
+                    per_action[actual_idx]["total"] += 1
+                    if actual_idx == pred_idx:
+                        correct += 1
+                        per_action[actual_idx]["correct"] += 1
+                        color = (0, 200, 0)
+                    else:
+                        color = (0, 0, 255)
                 else:
                     color = (0, 0, 255)
                 y += 20
@@ -119,8 +131,23 @@ def replay(log_file: str, delay: int = 500, model_path: Optional[str] = None,
 
     if model and accuracy_out:
         acc = correct / total if total else 0.0
+        per_action_metrics = {
+            _label_from_idx(env, idx): {
+                "accuracy": (vals["correct"] / vals["total"])
+                if vals["total"]
+                else 0.0,
+                "total": vals["total"],
+            }
+            for idx, vals in per_action.items()
+            if vals["total"] > 0
+        }
+        metrics = {
+            "accuracy": acc,
+            "confusion_matrix": conf_matrix.tolist(),
+            "per_action": per_action_metrics,
+        }
         with open(accuracy_out, "w") as f_out:
-            json.dump({"accuracy": acc}, f_out)
+            json.dump(metrics, f_out)
         print(f"Accuracy: {acc:.2%}")
 
 
@@ -132,8 +159,12 @@ def main():
                         help="Delay between frames in ms")
     parser.add_argument("--model", type=str, default=None,
                         help="Optional path to PPO or BC model")
-    parser.add_argument("--accuracy-out", type=str, default=None,
-                        help="Write model accuracy to this file")
+    parser.add_argument(
+        "--accuracy-out",
+        type=str,
+        default=None,
+        help="Write accuracy, confusion matrix and per-action stats to this file",
+    )
     args = parser.parse_args()
     replay(args.log, args.delay, args.model, args.accuracy_out)
 

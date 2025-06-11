@@ -1,6 +1,6 @@
 # EVE Online Bot Project Scaffold
 
-> version: 0.4.4
+> version: 0.4.5
 > updated: Integrated dynamic ROI types, enhanced env, ROI capture tool, GUI, data recorder, pretraining pipeline
 
 ---
@@ -11,7 +11,7 @@ BAgent/
 ├── src/
 │   ├── bot_core.py       # version: 0.5.0 | path: src/bot_core.py
 │   ├── env.py            # version: 0.4.4 | path: src/env.py
-│   ├── agent.py          # version: 0.3.0 | path: src/agent.py
+│   ├── agent.py          # version: 0.5.0 | path: src/agent.py
 │   ├── ocr.py            # version: 0.3.4 | path: src/ocr.py  
 │   ├── cv.py             # version: 0.3.2 | path: src/cv.py  
 │   ├── ui.py             # version: 0.3.7 | path: src/ui.py  
@@ -29,7 +29,7 @@ BAgent/
 ├── export_ocr_samples.py # version: 0.1.0 | path: export_ocr_samples.py
 ├── generate_box_files.py # version: 0.1.0 | path: generate_box_files.py
 ├── pre_train_data.py     # version: 0.2.0 | path: pre_train_data.py
-├── replay_session.py     # version: 0.2.0 | path: replay_session.py
+├── replay_session.py     # version: 0.3.0 | path: replay_session.py
 ├── add_tesseract_to_path.bat # helper script to set PATH on Windows
 ├── ets.txt               # sample training commands
 ├── promts.txt            # project prompts and notes
@@ -38,7 +38,7 @@ BAgent/
 ├── test_env.py           # version: 0.1.1 | path: test_env.py
 ├── tests/                # test suite
 ├── training_texts_dir/   # OCR training data
-└── README.md             # version: 0.4.3 | path: README.md
+└── README.md             # version: 0.4.4 | path: README.md
 ```
 
 ---
@@ -55,7 +55,9 @@ BAgent/
   - `data_recorder.py` supports manual/automatic demo collection.
   - Tools for dataset generation and preprocessing.
   - CLI entry via `run_start.py` and PySide6 GUI support.
-- **Testing & Validation:**  
+  - `agent.py` provides BC training (`train_bc_from_data`) and inference (`load_and_predict`).
+  - `replay_session.py` visualizes demonstrations and outputs accuracy and confusion metrics.
+- **Testing & Validation:**
   - `test_env.py` for quick ROI and env step sanity checks.  
 
 ---
@@ -154,7 +156,7 @@ pyyaml
 - **Data Recording & Pretraining**:
   - `data_recorder.py` logs frame screenshots, observations and semantic actions.
   - Scripts for behavior cloning from recorded data.
-  - Placeholder `agent.py` for PPO model management.
+  - `agent.py` includes BC training and inference helpers.
   - `bot_core.py` central bot loop connecting all modules.
 
 ---

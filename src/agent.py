@@ -1,18 +1,39 @@
-# version: 0.4.0
+# version: 0.5.0
 # path: src/agent.py
 
 import os
+import json
 import yaml
-from ocr import OcrEngine
+import joblib
+import numpy as np
+from sklearn.neural_network import MLPClassifier
 import pyautogui
 from stable_baselines3 import PPO
 import torch
+import torch.nn as nn
 from pre_train_data import BCModel, train_bc as bc_train
 
 from capture_utils import capture_screen
 from roi_capture import RegionHandler
 from state_machine import State, Event
 from env import EveEnv
+
+
+class BCPolicy(nn.Module):
+    """Simple MLP policy used for long-term BC integration."""
+
+    def __init__(self, input_dim: int, n_actions: int):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(input_dim, 64),
+            nn.ReLU(),
+            nn.Linear(64, 64),
+            nn.ReLU(),
+            nn.Linear(64, n_actions),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.net(x)
 
 class AIPilot:
     """
@@ -248,5 +269,61 @@ class AIPilot:
             logits = self.bc_model(obs_t)
             action = int(torch.argmax(logits, dim=1).item())
         return action
+
+    # ---- Lightweight BC trainer using scikit-learn ----
+
+    def _label_mapping(self):
+        mapping = {}
+        for idx, (typ, target) in enumerate(self.env.actions):
+            if typ == "click":
+                label = f"click_{target}"
+            elif typ == "keypress":
+                label = f"keypress_{target}"
+            else:
+                label = "sleep"
+            mapping[label] = idx
+        return mapping
+
+    def train_bc_from_data(self, log_file: str, output_model: str):
+        """Train an MLPClassifier from a demonstration log."""
+        mapping = self._label_mapping()
+        states = []
+        actions = []
+        with open(log_file, "r") as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                entry = json.loads(line)
+                label = entry.get("action")
+                state = entry.get("state", {}).get("obs")
+                if state is None or label is None:
+                    continue
+                if label in mapping:
+                    act_idx = mapping[label]
+                elif "_" in label:
+                    try:
+                        act_idx = int(label.split("_")[-1])
+                    except ValueError:
+                        continue
+                else:
+                    continue
+                states.append(state)
+                actions.append(act_idx)
+        if not states:
+            raise ValueError("No training samples found")
+        X = np.array(states, dtype=np.float32)
+        y = np.array(actions, dtype=np.int64)
+        clf = MLPClassifier(hidden_layer_sizes=(64, 64), max_iter=200)
+        clf.fit(X, y)
+        joblib.dump({"model": clf, "mapping": mapping}, output_model)
+        self.bc_clf = clf
+
+    def load_and_predict(self, obs_dict):
+        """Predict an action index using a loaded scikit-learn BC model."""
+        if not hasattr(self, "bc_clf") or self.bc_clf is None:
+            raise ValueError("BC classifier not loaded")
+        vec = np.array(obs_dict["obs"], dtype=np.float32).reshape(1, -1)
+        idx = int(self.bc_clf.predict(vec)[0])
+        return idx
 
     # Optionally, you can add helpers to interpret and execute the returned action dict

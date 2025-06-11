@@ -1,5 +1,5 @@
 # BAgent
-<!-- version: 0.4.3 | path: README.md -->
+<!-- version: 0.4.5 | path: README.md -->
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
 
@@ -38,20 +38,30 @@ The loader converts action labels to one-hot vectors and returns
 python run_start.py --train --bc_model bc_model.pt --timesteps 50000
 ```
 
+4. Train a quick MLP-based policy directly from the demonstration log:
+
+```python
+from src.agent import AIPilot
+pilot = AIPilot()
+pilot.train_bc_from_data('logs/demonstrations/log.jsonl', 'bc_clf.joblib')
+action_idx = pilot.load_and_predict({'obs': [0]*pilot.env.observation_space.shape[0]})
+```
+
 ## Session Replay
 
 Visualize recorded demonstrations and compare against a trained model using
-`replay_session.py`:
+`replay_session.py`. The script overlays predicted vs. actual actions and writes
+validation metrics to a JSON file:
 
 ```bash
 python replay_session.py --log logs/demonstrations/log.jsonl --delay 300 \
-    --model bc_model.pt --accuracy-out acc.json
+    --model bc_model.pt --accuracy-out metrics.json
 ```
 
-During playback the actual action, predicted action and key state values are
-overlaid on the frame. Mismatched predictions are highlighted in red and the
-overall accuracy is written to the optional output file. Press **q** to exit the
-viewer.
+During playback the frame, environment state and predicted action confidence are
+displayed. Mismatched predictions are highlighted in red. After exiting, a JSON
+file is produced containing overall accuracy, a confusion matrix and per-action
+statistics. Press **q** to exit the viewer.
 
 ## Mining Helpers
 
