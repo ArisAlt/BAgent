@@ -1,7 +1,7 @@
 # EVE Online Bot Project Scaffold
 
-> version: 0.5.1
-> updated: Added thin wrapper modules for easy imports and documented file versioning
+> version: 0.5.2
+> updated: Added cv2 fallback in `roi_capture.py` and clarified wrapper behaviour
 
 ---
 
@@ -26,7 +26,7 @@ BAgent/
 │   │   └── agent_config.yaml # version: 0.1.0 | path: src/config/agent_config.yaml
 │   └── roi_screenshots/  # ROI screenshot samples
 ├── env.py               # version: 0.1.0 | path: env.py
-├── roi_capture.py       # version: 0.1.1 | path: roi_capture.py
+├── roi_capture.py       # version: 0.1.2 | path: roi_capture.py
 ├── bot_core.py          # version: 0.1.0 | path: bot_core.py
 #   └─ thin wrappers re-exporting the real modules under src/
 ├── run_start.py          # version: 0.3.2 | path: run_start.py
