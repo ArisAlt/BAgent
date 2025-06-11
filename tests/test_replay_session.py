@@ -59,4 +59,6 @@ def test_replay_writes_accuracy(tmp_path, monkeypatch):
     assert acc_file.exists()
     data = json.loads(acc_file.read_text())
     assert data['accuracy'] == 1.0
+    assert 'confusion_matrix' in data
+    assert 'per_action' in data
     assert calls[-1] == ('destroy',)
