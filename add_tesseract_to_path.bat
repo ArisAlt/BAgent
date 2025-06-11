@@ -31,6 +31,10 @@ SET "new_path=!current_path!;%TESSERACT_DIR%"
 echo 🔧 Adding Tesseract to system PATH...
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path /t REG_EXPAND_SZ /d "!new_path!" /f >nul
 
-echo ✅ Tesseract added to PATH.
+REM Persistently set TESSERACT_CMD for Python tools
+set "tess_exe=%TESSERACT_DIR%\tesseract.exe"
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v TESSERACT_CMD /t REG_SZ /d "!tess_exe!" /f >nul
+
+echo ✅ Tesseract added to PATH and TESSERACT_CMD set to !tess_exe!.
 echo 🔁 You must RESTART your computer or log out/in for changes to take effect.
 pause
