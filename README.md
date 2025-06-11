@@ -34,6 +34,16 @@ python pre_train_data.py --demos demo_buffer.pkl --out bc_model.pt
 python run_start.py --train --bc_model bc_model.pt --timesteps 50000
 ```
 
+## Session Replay
+
+Visualize recorded demonstrations using `replay_session.py`:
+
+```bash
+python replay_session.py --log recordings/log.jsonl --delay 300
+```
+
+Press **q** to exit the viewer.
+
 ## Mining Helpers
 
 The ``MiningActions`` class implements the sequence of recommended mining

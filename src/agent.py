@@ -1,4 +1,4 @@
-# version: 0.3.0
+# version: 0.4.0
 # path: src/agent.py
 
 import os
@@ -6,6 +6,8 @@ import yaml
 from ocr import OcrEngine
 import pyautogui
 from stable_baselines3 import PPO
+import torch
+from pre_train_data import BCModel, train_bc as bc_train
 
 from capture_utils import capture_screen
 from roi_capture import RegionHandler
@@ -18,7 +20,7 @@ class AIPilot:
     uses RegionHandler for ROI lookups, and implements state-specific decision logic.
     """
 
-    def __init__(self, config_path=None, region_handler=None, model_path=None, env=None, fsm=None, ocr=None):
+    def __init__(self, config_path=None, region_handler=None, model_path=None, env=None, fsm=None, ocr=None, bc_model_path=None):
         # Load configuration
         cfg_path = config_path or os.path.join(
             os.path.dirname(__file__),
@@ -33,10 +35,13 @@ class AIPilot:
         self.fsm = fsm
         self.ocr = ocr or OcrEngine()
         self.model = None
+        self.bc_model = None
         if model_path is None:
             model_path = self._find_latest_model()
         if model_path and os.path.exists(model_path):
             self.model = PPO.load(model_path, env=self.env)
+        if bc_model_path and os.path.exists(bc_model_path):
+            self.load_bc_model(bc_model_path)
 
         # Internal flag to mark that station bookmark has been clicked
         self._station_selected = False
@@ -52,6 +57,12 @@ class AIPilot:
                 obs = self.env._get_obs()
             action, _ = self.model.predict(obs, deterministic=True)
             return self.env._action_to_command(int(action))
+
+        if self.bc_model:
+            if obs is None:
+                obs = self.env._get_obs()
+            action = self.bc_predict(obs)
+            return self.env._action_to_command(action)
 
         if state == State.MINING:
             return self.decide_mining(obs)
@@ -210,5 +221,32 @@ class AIPilot:
             return None
         latest = max(candidates, key=os.path.getmtime)
         return latest
+
+    # ---- Behavior Cloning helpers ----
+
+    def load_bc_model(self, path: str):
+        """Load a pretrained behavior cloning model from disk."""
+        obs_dim = self.env.observation_space.shape[0]
+        n_actions = self.env.action_space.n
+        model = BCModel(obs_dim, n_actions)
+        state = torch.load(path, map_location="cpu")
+        model.load_state_dict(state)
+        model.eval()
+        self.bc_model = model
+
+    def train_bc_model(self, demo_file: str, output: str, epochs: int = 5, batch_size: int = 32):
+        """Convenience wrapper around pre_train_data.train_bc."""
+        bc_train(demo_file, output, epochs=epochs, batch_size=batch_size)
+        self.load_bc_model(output)
+
+    def bc_predict(self, obs):
+        """Return an action index predicted by the behavior cloning model."""
+        if self.bc_model is None:
+            raise ValueError("BC model not loaded")
+        with torch.no_grad():
+            obs_t = torch.tensor(obs, dtype=torch.float32).unsqueeze(0)
+            logits = self.bc_model(obs_t)
+            action = int(torch.argmax(logits, dim=1).item())
+        return action
 
     # Optionally, you can add helpers to interpret and execute the returned action dict
