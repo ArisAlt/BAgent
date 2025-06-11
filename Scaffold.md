@@ -28,7 +28,7 @@ BAgent/
 ├── data_recorder.py      # version: 0.4.0 | path: data_recorder.py
 ├── export_ocr_samples.py # version: 0.1.0 | path: export_ocr_samples.py
 ├── generate_box_files.py # version: 0.1.0 | path: generate_box_files.py
-├── pre_train_data.py     # version: 0.1.0 | path: pre_train_data.py
+├── pre_train_data.py     # version: 0.2.0 | path: pre_train_data.py
 ├── replay_session.py     # version: 0.2.0 | path: replay_session.py
 ├── add_tesseract_to_path.bat # helper script to set PATH on Windows
 ├── ets.txt               # sample training commands
@@ -38,7 +38,7 @@ BAgent/
 ├── test_env.py           # version: 0.1.1 | path: test_env.py
 ├── tests/                # test suite
 ├── training_texts_dir/   # OCR training data
-└── README.md             # version: 0.4.1 | path: README.md
+└── README.md             # version: 0.4.3 | path: README.md
 ```
 
 ---
