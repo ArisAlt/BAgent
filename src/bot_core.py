@@ -1,4 +1,4 @@
-# version: 0.5.3
+# version: 0.6.0
 # path: src/bot_core.py
 
 import sys
@@ -40,6 +40,8 @@ class EveBot:
         self.reward_label = None
         self.integrity_label = None
 
+        self.mode = "auto"
+        self.pending_action = None
     def log(self, message, level="info"):
         getattr(logger, level, logger.info)(message)
         timestamped = f"[{time.strftime('%H:%M:%S')}] {message}"
@@ -65,9 +67,24 @@ class EveBot:
         if self.reward_label:
             self.reward_label.setText(f"Reward: {reward:.2f}")
 
+    def confirm_suggestion(self):
+        if self.pending_action is not None:
+            self.manual_action(self.pending_action)
+            self.pending_action = None
+
     def _main_loop(self):
         import capture_utils
         while self.running:
+            if self.mode == "manual":
+                time.sleep(0.1)
+                continue
+            if self.mode == "assist":
+                if self.pending_action is None:
+                    obs = self.env.get_observation()["obs"]
+                    self.pending_action = self.agent.bc_predict(obs)
+                    self.log(f"Suggested action {self.pending_action}")
+                time.sleep(0.1)
+                continue
             screen = capture_utils.capture_screen(select_region=False)
             if self.fsm.state.name == 'MINING':
                 self._do_mining_routine(screen)
@@ -189,6 +206,14 @@ class BotGui(QtWidgets.QWidget):
         if add:
             add(self.override_input)
             add(self.override_btn)
+        self.mode_label = QtWidgets.QLabel("Mode: Auto")
+        if add:
+            add(self.mode_label)
+        if hasattr(QtWidgets, "QShortcut"):
+            QtWidgets.QShortcut(QtGui.QKeySequence("F1"), self, activated=lambda: self._switch_mode("auto"))
+            QtWidgets.QShortcut(QtGui.QKeySequence("F2"), self, activated=lambda: self._switch_mode("manual"))
+            QtWidgets.QShortcut(QtGui.QKeySequence("F3"), self, activated=lambda: self._switch_mode("assist"))
+            QtWidgets.QShortcut(QtGui.QKeySequence("F4"), self, activated=self.bot.confirm_suggestion)
 
         self.bot = EveBot(model_path=None)
         self.bot.gui_logger = self.log_area
@@ -200,6 +225,10 @@ class BotGui(QtWidgets.QWidget):
             self.stop_btn.clicked.connect(self.bot.stop)
         if hasattr(self.override_btn, "clicked") and hasattr(self.override_btn.clicked, "connect"):
             self.override_btn.clicked.connect(self._send_manual)
+    def _switch_mode(self, mode):
+        self.bot.set_mode(mode)
+        if hasattr(self.mode_label, "setText"):
+            self.mode_label.setText(f"Mode: {mode.capitalize()}")
 
     def _send_manual(self):
         text = self.override_input.text()

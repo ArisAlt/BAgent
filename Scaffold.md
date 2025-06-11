@@ -1,6 +1,6 @@
 # EVE Online Bot Project Scaffold
 
-> version: 0.4.7
+> version: 0.4.8
 > updated: Integrated dynamic ROI types, enhanced env, ROI capture tool, GUI, data recorder, pretraining pipeline
 
 ---
@@ -9,7 +9,7 @@
 ```
 BAgent/
 ├── src/
-│   ├── bot_core.py       # version: 0.5.3 | path: src/bot_core.py
+│   ├── bot_core.py       # version: 0.6.0 | path: src/bot_core.py
 │   ├── env.py            # version: 0.4.4 | path: src/env.py
 │   ├── agent.py          # version: 0.5.0 | path: src/agent.py
 │   ├── ocr.py            # version: 0.3.4 | path: src/ocr.py  
@@ -61,6 +61,7 @@ BAgent/
   - `agent.py` provides BC training (`train_bc_from_data`) and inference (`load_and_predict`).
   - `bot_core.py` can run BC models via `--mode bc_inference`.
   - `replay_session.py` visualizes demonstrations and outputs accuracy and confusion metrics.
+  - `bot_core.py` now supports Auto, Manual and Assistive modes toggled by F1-F3, with F4 confirming suggestions.
   - `replay_correction.py` allows correcting actions during replay and marks samples with higher weight.
   - `pre_train_data.py` now standardizes observations with `StandardScaler`
     and creates validation splits via `train_test_split` before training the PyTorch model.
