@@ -1,5 +1,5 @@
 # BAgent
-<!-- version: 0.5.2 | path: README.md -->
+<!-- version: 0.5.4 | path: README.md -->
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
 
@@ -8,6 +8,13 @@ A toolkit for automating EVE Online interactions. The project includes a Gym env
 ```bash
 pip install -r requirements.txt
 ```
+
+The repository ships with `sitecustomize.py`, which automatically adds
+`src/` to `PYTHONPATH`. Convenience wrappers (`env.py`, `bot_core.py`,
+`roi_capture.py`) mirror their counterparts under `src/` for easy imports.
+These top-level modules simply re-export everything from the `src` package so
+imports work whether you run scripts from the repository root or from the
+`tests/` directory.
 
 Run tests with:
 

@@ -1,8 +1,30 @@
-# version: 0.4.4
+# version: 0.4.5
 # path: src/env.py
 
-import gym
-from gym import spaces
+try:
+    import gym
+    from gym import spaces
+except Exception:  # pragma: no cover - allow import without gym
+    import types
+    gym = types.SimpleNamespace(Env=object)
+
+    class DummyDiscrete:
+        def __init__(self, n):
+            self.n = n
+        def sample(self):
+            return 0
+
+    class DummyBox:
+        def __init__(self, low, high, shape, dtype=None):
+            self.low = low
+            self.high = high
+            self.shape = shape
+            self.dtype = dtype
+        def sample(self):
+            import numpy as np
+            return np.zeros(self.shape, dtype=self.dtype or np.float32)
+
+    spaces = types.SimpleNamespace(Discrete=DummyDiscrete, Box=DummyBox)
 import numpy as np
 from ocr import OcrEngine
 from cv import CvEngine

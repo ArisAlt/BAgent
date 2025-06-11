@@ -1,7 +1,7 @@
 # EVE Online Bot Project Scaffold
 
-> version: 0.4.9
-> updated: Integrated dynamic ROI types, enhanced env, ROI capture tool, GUI, data recorder, pretraining pipeline
+> version: 0.5.1
+> updated: Added thin wrapper modules for easy imports and documented file versioning
 
 ---
 
@@ -10,7 +10,7 @@
 BAgent/
 ├── src/
 │   ├── bot_core.py       # version: 0.6.0 | path: src/bot_core.py
-│   ├── env.py            # version: 0.4.4 | path: src/env.py
+│   ├── env.py            # version: 0.4.5 | path: src/env.py
 │   ├── agent.py          # version: 0.5.0 | path: src/agent.py
 │   ├── ocr.py            # version: 0.3.5 | path: src/ocr.py
 │   ├── cv.py             # version: 0.3.3 | path: src/cv.py
@@ -25,6 +25,10 @@ BAgent/
 │   ├── config/
 │   │   └── agent_config.yaml # version: 0.1.0 | path: src/config/agent_config.yaml
 │   └── roi_screenshots/  # ROI screenshot samples
+├── env.py               # version: 0.1.0 | path: env.py
+├── roi_capture.py       # version: 0.1.1 | path: roi_capture.py
+├── bot_core.py          # version: 0.1.0 | path: bot_core.py
+#   └─ thin wrappers re-exporting the real modules under src/
 ├── run_start.py          # version: 0.3.2 | path: run_start.py
 ├── data_recorder.py      # version: 0.4.0 | path: data_recorder.py
 ├── export_ocr_samples.py # version: 0.1.3 | path: export_ocr_samples.py
@@ -44,8 +48,9 @@ BAgent/
 │   ├── test_gui_cli_integration.py # version: 0.1.0 | path: tests/test_gui_cli_integration.py
 │   ├── test_region_handler.py     # version: 0.1.0 | path: tests/test_region_handler.py
 │   └── test_replay_session.py     # version: 0.1.0 | path: tests/test_replay_session.py
+├── sitecustomize.py      # version: 0.1.0 | path: sitecustomize.py
 ├── training_texts_dir/   # OCR training data
-└── README.md             # version: 0.5.2 | path: README.md
+└── README.md             # version: 0.5.4 | path: README.md
 ```
 
 ---
