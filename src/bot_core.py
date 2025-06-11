@@ -1,4 +1,4 @@
-# version: 0.6.0
+# version: 0.6.1
 # path: src/bot_core.py
 
 import sys
@@ -42,6 +42,11 @@ class EveBot:
 
         self.mode = "auto"
         self.pending_action = None
+
+    def set_mode(self, mode: str):
+        """Change bot execution mode and log the transition."""
+        self.mode = mode
+        self.log(f"Mode switched to {mode}")
     def log(self, message, level="info"):
         getattr(logger, level, logger.info)(message)
         timestamped = f"[{time.strftime('%H:%M:%S')}] {message}"

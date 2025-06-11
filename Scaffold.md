@@ -9,7 +9,7 @@
 ```
 BAgent/
 ├── src/
-│   ├── bot_core.py       # version: 0.6.0 | path: src/bot_core.py
+│   ├── bot_core.py       # version: 0.6.1 | path: src/bot_core.py
 │   ├── env.py            # version: 0.4.5 | path: src/env.py
 │   ├── agent.py          # version: 0.5.0 | path: src/agent.py
 │   ├── ocr.py            # version: 0.3.5 | path: src/ocr.py
@@ -47,7 +47,8 @@ BAgent/
 │   ├── test_env_actions.py        # version: 0.1.0 | path: tests/test_env_actions.py
 │   ├── test_gui_cli_integration.py # version: 0.1.0 | path: tests/test_gui_cli_integration.py
 │   ├── test_region_handler.py     # version: 0.1.0 | path: tests/test_region_handler.py
-│   └── test_replay_session.py     # version: 0.1.0 | path: tests/test_replay_session.py
+│   ├── test_replay_session.py     # version: 0.1.0 | path: tests/test_replay_session.py
+│   └── test_evebot_mode.py        # version: 0.1.0 | path: tests/test_evebot_mode.py
 ├── sitecustomize.py      # version: 0.1.0 | path: sitecustomize.py
 ├── training_texts_dir/   # OCR training data
 └── README.md             # version: 0.5.4 | path: README.md
@@ -71,6 +72,7 @@ BAgent/
   - `bot_core.py` can run BC models via `--mode bc_inference`.
   - `replay_session.py` visualizes demonstrations and outputs accuracy and confusion metrics.
   - `bot_core.py` now supports Auto, Manual and Assistive modes toggled by F1-F3, with F4 confirming suggestions.
+  - `EveBot.set_mode` method centralizes mode switching and logs transitions.
   - `replay_correction.py` allows correcting actions during replay and marks samples with higher weight.
   - `pre_train_data.py` now standardizes observations with `StandardScaler`
     and creates validation splits via `train_test_split` before training the PyTorch model.

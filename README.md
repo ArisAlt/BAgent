@@ -1,5 +1,5 @@
 # BAgent
-<!-- version: 0.5.6 | path: README.md -->
+<!-- version: 0.5.7 | path: README.md -->
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
 
@@ -46,6 +46,7 @@ entries in `Scaffold.md`.
 ## Human-in-the-loop Modes
 
 During runtime press **F1** for Auto, **F2** for Manual, and **F3** for Assistive mode. In Assistive mode press **F4** to execute the suggested action.
+The `EveBot.set_mode()` method logs these transitions and updates the running mode.
 
 ## Behavior Cloning Pretraining
 
