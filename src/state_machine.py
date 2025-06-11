@@ -1,4 +1,5 @@
-# src/state_machine.py (version 0.2.0)
+# version: 0.2.0
+# path: src/state_machine.py
 from enum import Enum, auto
 
 class State(Enum):
