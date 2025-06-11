@@ -31,6 +31,7 @@ BAgent/
 ├── generate_box_files.py # version: 0.1.0 | path: generate_box_files.py
 ├── pre_train_data.py     # version: 0.3.0 | path: pre_train_data.py
 ├── replay_session.py     # version: 0.3.0 | path: replay_session.py
+├── replay_correction.py     # version: 0.1.0 | path: replay_correction.py
 ├── add_tesseract_to_path.bat # helper script to set PATH on Windows
 ├── ets.txt               # sample training commands
 ├── promts.txt            # project prompts and notes
@@ -60,9 +61,9 @@ BAgent/
   - `agent.py` provides BC training (`train_bc_from_data`) and inference (`load_and_predict`).
   - `bot_core.py` can run BC models via `--mode bc_inference`.
   - `replay_session.py` visualizes demonstrations and outputs accuracy and confusion metrics.
-  - `pre_train_data.py` now standardizes observations with `StandardScaler` and
-    creates validation splits via `train_test_split` before training the PyTorch
-    model.
+  - `replay_correction.py` allows correcting actions during replay and marks samples with higher weight.
+  - `pre_train_data.py` now standardizes observations with `StandardScaler`
+    and creates validation splits via `train_test_split` before training the PyTorch model.
 - **Testing & Validation:**
   - `test_env.py` for quick ROI and env step sanity checks.
   - `test_gui_cli_integration.py` exercises ROI/UI functionality via the GUI and CLI.
