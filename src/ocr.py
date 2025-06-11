@@ -1,6 +1,7 @@
-# version: 0.3.4
+# version: 0.3.5
 # path: src/ocr.py
 
+import os
 import numpy as np
 from PIL import Image, ImageGrab
 import threading
@@ -14,7 +15,7 @@ except Exception:
     _has_paddle = False
 
 class OcrEngine:
-    def __init__(self, use_angle_cls=True, lang='en', use_paddle=True):
+    def __init__(self, use_angle_cls=True, lang='en', use_paddle=True, tesseract_cmd=None):
         """
         Initialize OCR engine: try PaddleOCR if available and requested, else use pytesseract.
         """
@@ -25,8 +26,9 @@ class OcrEngine:
         try:
             import pytesseract
             self.pytesseract = pytesseract
-            # configure tesseract executable path as needed
-            self.pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+            t_cmd = tesseract_cmd or os.environ.get("TESSERACT_CMD")
+            if t_cmd:
+                self.pytesseract.pytesseract.tesseract_cmd = t_cmd
             self.has_tesseract = True
         except Exception:
             self.has_tesseract = False
