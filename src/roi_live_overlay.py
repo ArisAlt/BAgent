@@ -18,7 +18,7 @@ def main_loop():
     print("[Overlay] Press ESC to exit")
 
     while True:
-        screen = capture_screen(overlay_title="ROI Live Overlay")
+        screen = capture_screen()
         if screen is None:
             print("[Overlay] ❌ Screen capture failed.")
             continue
