@@ -126,7 +126,7 @@ def replay(log_file: str, delay: int = 500, model_path: Optional[str] = None,
 
 def main():
     parser = argparse.ArgumentParser(description="Replay recorded session")
-    parser.add_argument("--log", type=str, default="recordings/log.jsonl",
+    parser.add_argument("--log", type=str, default="logs/demonstrations/log.jsonl",
                         help="Path to log file")
     parser.add_argument("--delay", type=int, default=500,
                         help="Delay between frames in ms")

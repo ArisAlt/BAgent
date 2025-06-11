@@ -1,4 +1,5 @@
 # BAgent
+<!-- version: 0.4.2 | path: README.md -->
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
 
@@ -16,7 +17,7 @@ pytest -q
 
 ## Behavior Cloning Pretraining
 
-1. Record demonstrations:
+1. Record demonstrations (frames + state logs saved under `logs/demonstrations/`):
 
 ```bash
 python data_recorder.py --manual False
@@ -40,7 +41,7 @@ Visualize recorded demonstrations and compare against a trained model using
 `replay_session.py`:
 
 ```bash
-python replay_session.py --log recordings/log.jsonl --delay 300 \
+python replay_session.py --log logs/demonstrations/log.jsonl --delay 300 \
     --model bc_model.pt --accuracy-out acc.json
 ```
 

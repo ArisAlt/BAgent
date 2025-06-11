@@ -25,7 +25,7 @@ BAgent/
 │   │   └── agent_config.yaml # version: 0.1.0 | path: src/config/agent_config.yaml
 │   └── roi_screenshots/  # ROI screenshot samples
 ├── run_start.py          # version: 0.2.0 | path: run_start.py  
-├── data_recorder.py      # version: 0.3.0 | path: data_recorder.py  
+├── data_recorder.py      # version: 0.4.0 | path: data_recorder.py
 ├── export_ocr_samples.py # version: 0.1.0 | path: export_ocr_samples.py
 ├── generate_box_files.py # version: 0.1.0 | path: generate_box_files.py
 ├── pre_train_data.py     # version: 0.1.0 | path: pre_train_data.py
@@ -152,7 +152,7 @@ pyyaml
   - Screen capture separated into `capture_utils.py`.
   - ROI capture and validation logic moved to `roi_capture.py`.
 - **Data Recording & Pretraining**:
-  - `data_recorder.py` allows manual/automatic action logging.
+  - `data_recorder.py` logs frame screenshots, observations and semantic actions.
   - Scripts for behavior cloning from recorded data.
   - Placeholder `agent.py` for PPO model management.
   - `bot_core.py` central bot loop connecting all modules.

@@ -131,3 +131,12 @@ class EveEnv(gym.Env):
         img = self.ui.capture()
         text = self.ocr.extract_text(img).lower()
         return ('destroyed' in text) or ('docked' in text)
+
+    def get_observation(self):
+        """Return a dictionary snapshot of the current observation state."""
+        vec = self._get_obs()
+        return {
+            'obs': vec.tolist(),
+            'prev_volume': getattr(self, 'prev_volume', None),
+            'cargo_capacity': getattr(self, 'cargo_capacity', None)
+        }
