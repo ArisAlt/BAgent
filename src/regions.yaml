@@ -104,6 +104,13 @@ regions:
     - 0.9927007299270073
     - 0.7058252427184466
     type: text
+  sample:
+    rel:
+    - 0.1
+    - 0.2
+    - 0.4
+    - 0.6
+    type: click
   targeting_indicators:
     rel:
     - 0.735140771637122

@@ -45,7 +45,7 @@ Each Python source file begins with comments specifying its `version` and
 entries in `Scaffold.md`.
 ## Human-in-the-loop Modes
 
-During runtime press **F1** for Auto, **F2** for Manual, and **F3** for Assistive mode. In Assistive mode press **F4** to execute the suggested action.
+During runtime press **F9** for Auto, **F10** for Manual, and **F11** for Assistive mode. In Assistive mode press **F12** to execute the suggested action.
 
 ## Behavior Cloning Pretraining
 

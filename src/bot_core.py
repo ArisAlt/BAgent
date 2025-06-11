@@ -210,10 +210,10 @@ class BotGui(QtWidgets.QWidget):
         if add:
             add(self.mode_label)
         if hasattr(QtWidgets, "QShortcut"):
-            QtWidgets.QShortcut(QtGui.QKeySequence("F1"), self, activated=lambda: self._switch_mode("auto"))
-            QtWidgets.QShortcut(QtGui.QKeySequence("F2"), self, activated=lambda: self._switch_mode("manual"))
-            QtWidgets.QShortcut(QtGui.QKeySequence("F3"), self, activated=lambda: self._switch_mode("assist"))
-            QtWidgets.QShortcut(QtGui.QKeySequence("F4"), self, activated=self.bot.confirm_suggestion)
+            QtWidgets.QShortcut(QtGui.QKeySequence("F9"), self, activated=lambda: self._switch_mode("auto"))
+            QtWidgets.QShortcut(QtGui.QKeySequence("F10"), self, activated=lambda: self._switch_mode("manual"))
+            QtWidgets.QShortcut(QtGui.QKeySequence("F11"), self, activated=lambda: self._switch_mode("assist"))
+            QtWidgets.QShortcut(QtGui.QKeySequence("F12"), self, activated=self.bot.confirm_suggestion)
 
         self.bot = EveBot(model_path=None)
         self.bot.gui_logger = self.log_area
