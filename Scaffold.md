@@ -1,7 +1,8 @@
 # EVE Online Bot Project Scaffold
 
-> version: 0.5.3
-> updated: Ensured `roi_capture` inserts its directory into `sys.path` before importing siblings
+> version: 0.5.4
+> updated: `agent` now appends the project root to `sys.path` for importing
+> `pre_train_data`, in addition to `roi_capture` inserting its own folder.
 
 ---
 
@@ -11,7 +12,7 @@ BAgent/
 ├── src/
 │   ├── bot_core.py       # version: 0.6.0 | path: src/bot_core.py
 │   ├── env.py            # version: 0.4.5 | path: src/env.py
-│   ├── agent.py          # version: 0.5.0 | path: src/agent.py
+│   ├── agent.py          # version: 0.5.1 | path: src/agent.py
 │   ├── ocr.py            # version: 0.3.5 | path: src/ocr.py
 │   ├── cv.py             # version: 0.3.3 | path: src/cv.py
 │   ├── ui.py             # version: 0.3.7 | path: src/ui.py  
@@ -50,7 +51,7 @@ BAgent/
 │   └── test_replay_session.py     # version: 0.1.0 | path: tests/test_replay_session.py
 ├── sitecustomize.py      # version: 0.1.0 | path: sitecustomize.py
 ├── training_texts_dir/   # OCR training data
-└── README.md             # version: 0.5.4 | path: README.md
+└── README.md             # version: 0.5.7 | path: README.md
 ```
 
 ---
@@ -74,6 +75,8 @@ BAgent/
   - `replay_correction.py` allows correcting actions during replay and marks samples with higher weight.
   - `pre_train_data.py` now standardizes observations with `StandardScaler`
     and creates validation splits via `train_test_split` before training the PyTorch model.
+  - `agent.py` prepends the project root to `sys.path` so `pre_train_data` can
+    be imported when running modules from the `src` directory.
 - **Testing & Validation:**
   - `test_env.py` for quick ROI and env step sanity checks.
   - `test_gui_cli_integration.py` exercises ROI/UI functionality via the GUI and CLI.

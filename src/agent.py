@@ -1,7 +1,8 @@
-# version: 0.5.0
+# version: 0.5.1
 # path: src/agent.py
 
 import os
+import sys
 import json
 import yaml
 import joblib
@@ -11,6 +12,9 @@ import pyautogui
 from stable_baselines3 import PPO
 import torch
 import torch.nn as nn
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
 from pre_train_data import BCModel, train_bc as bc_train
 
 from capture_utils import capture_screen

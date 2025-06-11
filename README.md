@@ -1,5 +1,5 @@
 # BAgent
-<!-- version: 0.5.6 | path: README.md -->
+<!-- version: 0.5.7 | path: README.md -->
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
 
@@ -18,7 +18,9 @@ imports work whether you run scripts from the repository root or from the
 dependencies like OpenCV when running the unit tests.
 
 Modules such as `roi_capture` now insert their folder into `sys.path` before
-importing sibling modules. This prevents `ModuleNotFoundError` when the
+importing sibling modules. Similarly, `src/agent.py` adds the project root to
+`sys.path` so it can import `pre_train_data` even when scripts are launched from
+within the `src` directory. These tweaks prevent `ModuleNotFoundError` when the
 wrappers are used without modifying `PYTHONPATH`.
 
 Run tests with:
