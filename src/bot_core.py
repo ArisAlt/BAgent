@@ -156,36 +156,47 @@ class EveBot:
 class BotGui(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("EVE Bot Controller")
+        if hasattr(self, "setWindowTitle"):
+            self.setWindowTitle("EVE Bot Controller")
         layout = QtWidgets.QVBoxLayout(self)
+        add = getattr(layout, "addWidget", None)
 
         self.log_area = QtWidgets.QTextEdit()
-        self.log_area.setReadOnly(True)
-        layout.addWidget(self.log_area)
+        if hasattr(self.log_area, "setReadOnly"):
+            self.log_area.setReadOnly(True)
+        if add:
+            add(self.log_area)
 
         self.reward_label = QtWidgets.QLabel("Reward: 0.0")
         self.integrity_label = QtWidgets.QLabel("Integrity: 100")
-        layout.addWidget(self.reward_label)
-        layout.addWidget(self.integrity_label)
+        if add:
+            add(self.reward_label)
+            add(self.integrity_label)
 
         self.start_btn = QtWidgets.QPushButton("Start Bot")
         self.stop_btn = QtWidgets.QPushButton("Stop Bot")
-        layout.addWidget(self.start_btn)
-        layout.addWidget(self.stop_btn)
+        if add:
+            add(self.start_btn)
+            add(self.stop_btn)
 
         self.override_input = QtWidgets.QLineEdit()
-        self.override_input.setPlaceholderText("Action index")
+        if hasattr(self.override_input, "setPlaceholderText"):
+            self.override_input.setPlaceholderText("Action index")
         self.override_btn = QtWidgets.QPushButton("Send Manual Action")
-        layout.addWidget(self.override_input)
-        layout.addWidget(self.override_btn)
+        if add:
+            add(self.override_input)
+            add(self.override_btn)
 
         self.bot = EveBot(model_path=None)
         self.bot.gui_logger = self.log_area
         self.bot.reward_label = self.reward_label
 
-        self.start_btn.clicked.connect(self.bot.start)
-        self.stop_btn.clicked.connect(self.bot.stop)
-        self.override_btn.clicked.connect(self._send_manual)
+        if hasattr(self.start_btn, "clicked") and hasattr(self.start_btn.clicked, "connect"):
+            self.start_btn.clicked.connect(self.bot.start)
+        if hasattr(self.stop_btn, "clicked") and hasattr(self.stop_btn.clicked, "connect"):
+            self.stop_btn.clicked.connect(self.bot.stop)
+        if hasattr(self.override_btn, "clicked") and hasattr(self.override_btn.clicked, "connect"):
+            self.override_btn.clicked.connect(self._send_manual)
 
     def _send_manual(self):
         text = self.override_input.text()

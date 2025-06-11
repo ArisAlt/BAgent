@@ -250,8 +250,13 @@ class AIPilot:
         obs_dim = self.env.observation_space.shape[0]
         n_actions = self.env.action_space.n
         model = BCModel(obs_dim, n_actions)
-        state = torch.load(path, map_location="cpu")
-        model.load_state_dict(state)
+        state_dict = torch.load(path, map_location="cpu")
+        if isinstance(state_dict, dict) and "model_state" in state_dict:
+            model.load_state_dict(state_dict["model_state"])
+            self.scaler = state_dict.get("scaler")
+        else:
+            model.load_state_dict(state_dict)
+            self.scaler = None
         model.eval()
         self.bc_model = model
 
@@ -265,7 +270,10 @@ class AIPilot:
         if self.bc_model is None:
             raise ValueError("BC model not loaded")
         with torch.no_grad():
-            obs_t = torch.tensor(obs, dtype=torch.float32).unsqueeze(0)
+            vec = np.array(obs, dtype=np.float32).reshape(1, -1)
+            if getattr(self, "scaler", None) is not None:
+                vec = self.scaler.transform(vec)
+            obs_t = torch.tensor(vec, dtype=torch.float32)
             logits = self.bc_model(obs_t)
             action = int(torch.argmax(logits, dim=1).item())
         return action
