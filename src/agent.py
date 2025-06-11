@@ -3,7 +3,7 @@
 
 import os
 import yaml
-import pytesseract
+from ocr import OcrEngine
 import pyautogui
 from stable_baselines3 import PPO
 
@@ -18,7 +18,7 @@ class AIPilot:
     uses RegionHandler for ROI lookups, and implements state-specific decision logic.
     """
 
-    def __init__(self, config_path=None, region_handler=None, model_path=None, env=None, fsm=None):
+    def __init__(self, config_path=None, region_handler=None, model_path=None, env=None, fsm=None, ocr=None):
         # Load configuration
         cfg_path = config_path or os.path.join(
             os.path.dirname(__file__),
@@ -31,6 +31,7 @@ class AIPilot:
         self.rh = region_handler or RegionHandler()
         self.env = env or EveEnv()
         self.fsm = fsm
+        self.ocr = ocr or OcrEngine()
         self.model = None
         if model_path is None:
             model_path = self._find_latest_model()
@@ -157,16 +158,16 @@ class AIPilot:
         # 2) OCR the panel crop
         full = capture_screen(select_region=False)
         panel = full[y1:y2, x1:x2]
-        data = pytesseract.image_to_data(panel, output_type=pytesseract.Output.DICT)
+        data = self.ocr.extract_data(panel)
 
         # 3) Find & click the station bookmark
         target = loc_cfg['station_bookmark']
-        for i, txt in enumerate(data['text']):
-            if txt.strip() == target:
-                bx = x1 + data['left'][i]
-                by = y1 + data['top'][i]
-                bw = data['width'][i]
-                bh = data['height'][i]
+        for entry in data:
+            if entry['text'].strip() == target:
+                bx = x1 + entry['left']
+                by = y1 + entry['top']
+                bw = entry['width']
+                bh = entry['height']
                 self.click_at(bx + bw//2, by + bh//2)
                 self._station_selected = True
                 break

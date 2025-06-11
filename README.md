@@ -56,10 +56,11 @@ set the `TESSERACT_CMD` environment variable. Windows users can run
 
 ### OCR Configuration
 
-`OcrEngine` also respects the `TESSERACT_CMD` variable or a `tesseract_cmd`
-argument when instantiated:
+`OcrEngine` uses [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) for
+text recognition. Once the package is installed no additional configuration is
+required:
 
 ```python
 from ocr import OcrEngine
-ocr = OcrEngine(tesseract_cmd="/usr/local/bin/tesseract")
+ocr = OcrEngine()
 ```

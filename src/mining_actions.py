@@ -14,7 +14,6 @@ import random
 import time
 import yaml
 import pyautogui
-import pytesseract
 
 from ui import Ui
 from roi_capture import RegionHandler
@@ -60,13 +59,13 @@ class MiningActions:
 
         full = capture_utils.capture_screen(select_region=False)
         panel = full[y1:y2, x1:x2]
-        data = pytesseract.image_to_data(panel, output_type=pytesseract.Output.DICT)
-        for i, txt in enumerate(data["text"]):
-            if txt.strip() == bookmark:
-                bx = x1 + data["left"][i]
-                by = y1 + data["top"][i]
-                bw = data["width"][i]
-                bh = data["height"][i]
+        data = self.ocr.extract_data(panel)
+        for entry in data:
+            if entry["text"].strip() == bookmark:
+                bx = x1 + entry["left"]
+                by = y1 + entry["top"]
+                bw = entry["width"]
+                bh = entry["height"]
                 pyautogui.click(bx + bw // 2, by + bh // 2)
                 break
 
@@ -171,13 +170,13 @@ class MiningActions:
 
         full = capture_utils.capture_screen(select_region=False)
         panel = full[y1:y2, x1:x2]
-        data = pytesseract.image_to_data(panel, output_type=pytesseract.Output.DICT)
-        for i, txt in enumerate(data["text"]):
-            if txt.strip() == station:
-                bx = x1 + data["left"][i]
-                by = y1 + data["top"][i]
-                bw = data["width"][i]
-                bh = data["height"][i]
+        data = self.ocr.extract_data(panel)
+        for entry in data:
+            if entry["text"].strip() == station:
+                bx = x1 + entry["left"]
+                by = y1 + entry["top"]
+                bw = entry["width"]
+                bh = entry["height"]
                 pyautogui.click(bx + bw // 2, by + bh // 2)
                 break
 
