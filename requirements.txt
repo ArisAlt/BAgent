@@ -8,3 +8,4 @@ gym
 stable-baselines3
 torch
 pyyaml
+pynput
