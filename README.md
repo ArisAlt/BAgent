@@ -1,5 +1,5 @@
 # BAgent
-<!-- version: 0.5.4 | path: README.md -->
+<!-- version: 0.5.6 | path: README.md -->
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
 
@@ -14,7 +14,12 @@ The repository ships with `sitecustomize.py`, which automatically adds
 `roi_capture.py`) mirror their counterparts under `src/` for easy imports.
 These top-level modules simply re-export everything from the `src` package so
 imports work whether you run scripts from the repository root or from the
-`tests/` directory.
+`tests/` directory. They also provide lightweight fallbacks for optional
+dependencies like OpenCV when running the unit tests.
+
+Modules such as `roi_capture` now insert their folder into `sys.path` before
+importing sibling modules. This prevents `ModuleNotFoundError` when the
+wrappers are used without modifying `PYTHONPATH`.
 
 Run tests with:
 
