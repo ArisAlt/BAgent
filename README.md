@@ -1,5 +1,5 @@
 # BAgent
-<!-- version: 0.4.9 | path: README.md -->
+<!-- version: 0.5.0 | path: README.md -->
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
 
@@ -84,6 +84,15 @@ During playback the frame, environment state and predicted action confidence are
 displayed. Mismatched predictions are highlighted in red. After exiting, a JSON
 file is produced containing overall accuracy, a confusion matrix and per-action
 statistics. Press **q** to exit the viewer.
+
+
+## Replay Correction
+
+Use `replay_correction.py` to modify incorrect actions during playback. Corrected samples are saved with a higher training weight.
+
+```bash
+python replay_correction.py --log logs/demonstrations/log.jsonl --out corrected.jsonl --model bc_model.pt
+```
 
 ## Mining Helpers
 
