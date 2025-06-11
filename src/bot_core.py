@@ -1,4 +1,4 @@
-# version: 0.5.2
+# version: 0.5.3
 # path: src/bot_core.py
 
 import sys
@@ -8,6 +8,9 @@ import re
 import pyautogui
 import cv2
 from PySide6 import QtWidgets, QtCore, QtGui
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 from roi_capture import RegionHandler
 from ocr import OcrEngine
@@ -37,9 +40,9 @@ class EveBot:
         self.reward_label = None
         self.integrity_label = None
 
-    def log(self, message):
+    def log(self, message, level="info"):
+        getattr(logger, level, logger.info)(message)
         timestamped = f"[{time.strftime('%H:%M:%S')}] {message}"
-        print(timestamped)
         if self.gui_logger:
             self.gui_logger.append(timestamped)
 
@@ -236,7 +239,7 @@ def main():
         while not done:
             action = pilot.bc_predict(obs)
             obs, reward, done, _ = env.step(action)
-            print(f"Action: {action}, Reward: {reward:.2f}")
+            logger.info(f"Action: {action}, Reward: {reward:.2f}")
 
 
 if __name__ == "__main__":

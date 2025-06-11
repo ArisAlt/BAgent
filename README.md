@@ -1,5 +1,5 @@
 # BAgent
-<!-- version: 0.4.8 | path: README.md -->
+<!-- version: 0.4.9 | path: README.md -->
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
 
@@ -14,6 +14,11 @@ Run tests with:
 ```bash
 pytest -q
 ```
+
+### Debug Logging
+
+Set the environment variable `LOG_LEVEL` or pass `--log-level` to `run_start.py`
+to control verbosity. Logs follow the format `[HH:MM:SS] LEVEL - message`.
 
 Additional integration tests for ROI/UI via the GUI and CLI can be executed with:
 
