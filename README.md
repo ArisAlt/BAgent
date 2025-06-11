@@ -36,13 +36,18 @@ python run_start.py --train --bc_model bc_model.pt --timesteps 50000
 
 ## Session Replay
 
-Visualize recorded demonstrations using `replay_session.py`:
+Visualize recorded demonstrations and compare against a trained model using
+`replay_session.py`:
 
 ```bash
-python replay_session.py --log recordings/log.jsonl --delay 300
+python replay_session.py --log recordings/log.jsonl --delay 300 \
+    --model bc_model.pt --accuracy-out acc.json
 ```
 
-Press **q** to exit the viewer.
+During playback the actual action, predicted action and key state values are
+overlaid on the frame. Mismatched predictions are highlighted in red and the
+overall accuracy is written to the optional output file. Press **q** to exit the
+viewer.
 
 ## Mining Helpers
 
