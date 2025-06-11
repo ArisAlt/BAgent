@@ -1,5 +1,6 @@
 # src/ocr_finetune.py
 # version: 0.1.0
+# path: src/ocr_finetune.py
 
 import subprocess
 

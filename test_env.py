@@ -1,4 +1,6 @@
 # test_env.py
+# version: 0.1.1
+# path: test_env.py
 # Quick smoke-test for your ROI definitions and Gym wrapper
 
 import time
