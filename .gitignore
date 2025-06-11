@@ -6,3 +6,8 @@ venv/
 
 # logs
 *.log
+
+# temporary files
+/promts.txt
+/ets.txt
+/regions.yaml
