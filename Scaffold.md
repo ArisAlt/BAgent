@@ -1,6 +1,6 @@
 # EVE Online Bot Project Scaffold
 
-> version: 0.4.6
+> version: 0.4.7
 > updated: Integrated dynamic ROI types, enhanced env, ROI capture tool, GUI, data recorder, pretraining pipeline
 
 ---
@@ -37,8 +37,9 @@ BAgent/
 ├── requirements.txt      # Python dependencies
 ├── test_env.py           # version: 0.1.1 | path: test_env.py
 ├── tests/                # test suite
+│   └── test_gui_cli_integration.py # version: 0.1.0 | path: tests/test_gui_cli_integration.py
 ├── training_texts_dir/   # OCR training data
-└── README.md             # version: 0.4.6 | path: README.md
+└── README.md             # version: 0.4.7 | path: README.md
 ```
 
 ---
@@ -59,7 +60,8 @@ BAgent/
   - `bot_core.py` can run BC models via `--mode bc_inference`.
   - `replay_session.py` visualizes demonstrations and outputs accuracy and confusion metrics.
 - **Testing & Validation:**
-  - `test_env.py` for quick ROI and env step sanity checks.  
+  - `test_env.py` for quick ROI and env step sanity checks.
+  - `test_gui_cli_integration.py` exercises ROI/UI functionality via the GUI and CLI.
 
 ---
 
@@ -159,6 +161,7 @@ pyyaml
   - Scripts for behavior cloning from recorded data.
   - `agent.py` includes BC training and inference helpers.
   - `bot_core.py` central bot loop connecting all modules.
+  - `test_gui_cli_integration.py` added for GUI and CLI integration testing.
 
 ---
 
