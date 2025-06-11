@@ -101,10 +101,12 @@ class RegionHandler:
         preview_dir = os.path.join(BASE_DIR, self.PREVIEW_DIR)
         os.makedirs(preview_dir, exist_ok=True)
         out = os.path.join(preview_dir, f"{name}.png")
-        cv2.imwrite(out, crop)
-        cv2.imshow(f"Preview: {name}", crop)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        if hasattr(cv2, "imwrite"):
+            cv2.imwrite(out, crop)
+        if hasattr(cv2, "imshow"):
+            cv2.imshow(f"Preview: {name}", crop)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
         return True
 
     def validate(self, coords, save_preview=False, region_name="region"):
@@ -120,7 +122,8 @@ class RegionHandler:
             sd = os.path.join(BASE_DIR, self.PREVIEW_DIR)
             os.makedirs(sd, exist_ok=True)
             fp = os.path.join(sd, f"{region_name}_preview.png")
-            cv2.imwrite(fp, crop)
+            if hasattr(cv2, "imwrite"):
+                cv2.imwrite(fp, crop)
         return valid
 
 
@@ -218,7 +221,8 @@ def capture_region_tool():
             os.makedirs(sd, exist_ok=True)
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
             fp = os.path.join(sd, f"{name}_{ts}.png")
-            cv2.imwrite(fp, crop)
+            if hasattr(cv2, "imwrite"):
+                cv2.imwrite(fp, crop)
             print(f"Region '{name}' captured. Screenshot saved: {fp}")
 
         elif op == 'list':
