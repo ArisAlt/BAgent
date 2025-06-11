@@ -29,6 +29,7 @@ BAgent/
 ├── export_ocr_samples.py # version: 0.1.0 | path: export_ocr_samples.py
 ├── generate_box_files.py # version: 0.1.0 | path: generate_box_files.py
 ├── pre_train_data.py     # version: 0.1.0 | path: pre_train_data.py
+├── replay_session.py     # version: 0.1.0 | path: replay_session.py
 ├── add_tesseract_to_path.bat # helper script to set PATH on Windows
 ├── ets.txt               # sample training commands
 ├── promts.txt            # project prompts and notes

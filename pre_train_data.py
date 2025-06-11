@@ -2,7 +2,10 @@
 
 import pickle
 import argparse
-from typing import Sequence
+import json
+from typing import Sequence, List, Tuple, Dict
+
+from src.env import EveEnv
 
 import torch
 from torch import nn, optim
@@ -24,9 +27,51 @@ class BCModel(nn.Module):
         return self.net(x)
 
 
+def _label_mapping(env: EveEnv) -> Dict[str, int]:
+    mapping = {}
+    for idx, (typ, target) in enumerate(env.actions):
+        if typ == 'click':
+            label = f'click_{target}'
+        elif typ == 'keypress':
+            label = f'keypress_{target}'
+        else:
+            label = 'sleep'
+        mapping[label] = idx
+    return mapping
+
+
+def _load_jsonl(path: str, env: EveEnv) -> Sequence[Tuple[List[float], int]]:
+    mapping = _label_mapping(env)
+    data = []
+    with open(path, 'r') as f:
+        for line in f:
+            entry = json.loads(line)
+            label = entry.get('action')
+            if label in mapping:
+                action = mapping[label]
+            elif label and '_' in label:
+                try:
+                    action = int(label.split('_')[-1])
+                except ValueError:
+                    continue
+            else:
+                continue
+            obs = entry.get('state', {}).get('obs')
+            if obs is not None:
+                data.append((obs, action))
+    return data
+
+
+def _load_data(demo_file: str) -> Sequence[Tuple[List[float], int]]:
+    env = EveEnv()
+    if demo_file.endswith('.jsonl'):
+        return _load_jsonl(demo_file, env)
+    with open(demo_file, 'rb') as f:
+        return pickle.load(f)
+
+
 def train_bc(demo_file: str, output: str, epochs: int = 5, batch_size: int = 32):
-    with open(demo_file, "rb") as f:
-        data: Sequence = pickle.load(f)
+    data: Sequence = _load_data(demo_file)
 
     obs = torch.tensor([d[0] for d in data], dtype=torch.float32)
     actions = torch.tensor([d[1] for d in data], dtype=torch.long)
