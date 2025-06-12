@@ -6,7 +6,7 @@
 ## Directory Structure
 ```
 BAgent/
-├── README.md           # version: 0.2.0 | path: README.md
+├── README.md           # version: 0.3.1 | path: README.md
 ├── src/
 │   ├── __init__.py       # version: 0.1.0 | path: src/__init__.py
 │   ├── bot_core.py       # version: 0.6.2 | path: src/bot_core.py
@@ -30,7 +30,7 @@ BAgent/
 ├── bot_core.py          # version: 0.1.0 | path: bot_core.py
 #   └─ thin wrappers re-exporting the real modules under src/
 ├── run_start.py          # version: 0.3.3 | path: run_start.py
-├── data_recorder.py      # version: 0.4.3 | path: data_recorder.py
+├── data_recorder.py      # version: 0.4.4 | path: data_recorder.py
 ├── export_ocr_samples.py # version: 0.1.3 | path: export_ocr_samples.py
 ├── generate_box_files.py # version: 0.1.1 | path: generate_box_files.py
 ├── pre_train_data.py     # version: 0.3.0 | path: pre_train_data.py
@@ -176,8 +176,9 @@ pyyaml
   - Screen capture separated into `capture_utils.py`.
   - ROI capture and validation logic moved to `roi_capture.py`.
 - **Data Recording & Pretraining**:
-  - `data_recorder.py` logs frame screenshots, observations and semantic actions.
-  - Recording can be terminated early with the **End** key.
+- `data_recorder.py` logs frame screenshots, observations and semantic actions.
+- Recording can be terminated early with the **End** key.
+  - The pickled buffer now stores the observation before the action is executed.
   - Scripts for behavior cloning from recorded data.
   - `agent.py` includes BC training and inference helpers.
   - `bot_core.py` central bot loop connecting all modules.

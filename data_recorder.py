@@ -1,4 +1,4 @@
-# version: 0.4.3
+# version: 0.4.4
 # path: data_recorder.py
 
 import pickle
@@ -115,8 +115,9 @@ def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True, model_
             state = env.get_observation()
             log_file.write(json.dumps({'frame': fp, 'action': label, 'state': state}) + "\n")
 
-            obs, reward, done, info = env.step(action)
-            demo_buffer.append((obs, action))
+            next_obs, reward, done, info = env.step(action)
+            demo_buffer.append((state['obs'], action))
+            obs = next_obs
             print(f"Recorded: Step={i+1}, Action={label}, Reward={reward}")
             if done:
                 obs = env.reset()
