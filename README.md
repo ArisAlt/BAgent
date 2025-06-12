@@ -1,5 +1,5 @@
 # BAgent
-<!-- version: 0.5.9 | path: README.md -->
+<!-- version: 0.6.0 | path: README.md -->
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
 
@@ -39,6 +39,11 @@ pytest -q
 
 Set the environment variable `LOG_LEVEL` or pass `--log-level` to `run_start.py`
 to control verbosity. Logs follow the format `[HH:MM:SS] LEVEL - message`.
+
+All modules now import the logger via `from src.logger import get_logger` or its
+relative form within `src/` (e.g. `from .logger import get_logger`). This
+ensures the package can be executed both from the repository root and the
+`src/` directory without `ModuleNotFoundError`.
 
 Additional integration tests for ROI/UI via the GUI and CLI can be executed with:
 

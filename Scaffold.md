@@ -1,7 +1,7 @@
 # EVE Online Bot Project Scaffold
 
-> version: 0.5.6
-> updated: added `src/__init__.py` and noted relative imports. The package now loads correctly across Python versions.
+> version: 0.5.7
+> updated: use relative logger imports and bump versions accordingly.
 
 ---
 
@@ -10,13 +10,13 @@
 BAgent/
 ├── src/
 │   ├── __init__.py       # version: 0.1.0 | path: src/__init__.py
-│   ├── bot_core.py       # version: 0.6.1 | path: src/bot_core.py
-│   ├── env.py            # version: 0.4.6 | path: src/env.py
+│   ├── bot_core.py       # version: 0.6.2 | path: src/bot_core.py
+│   ├── env.py            # version: 0.4.7 | path: src/env.py
 │   ├── agent.py          # version: 0.5.2 | path: src/agent.py
-│   ├── ocr.py            # version: 0.3.5 | path: src/ocr.py
-│   ├── cv.py             # version: 0.3.4 | path: src/cv.py
+│   ├── ocr.py            # version: 0.3.7 | path: src/ocr.py
+│   ├── cv.py             # version: 0.3.5 | path: src/cv.py
 │   ├── ui.py             # version: 0.3.8 | path: src/ui.py
-│   ├── capture_utils.py  # version: 0.8.1 | path: src/capture_utils.py
+│   ├── capture_utils.py  # version: 0.8.2 | path: src/capture_utils.py
 │   ├── logger.py         # version: 0.1.0 | path: src/logger.py
 │   ├── roi_capture.py    # version: 0.2.5 | path: src/roi_capture.py
 │   ├── mining_actions.py # version: 0.1.2 | path: src/mining_actions.py
@@ -51,7 +51,7 @@ BAgent/
 │   └── test_replay_session.py     # version: 0.1.0 | path: tests/test_replay_session.py
 ├── sitecustomize.py      # version: 0.1.0 | path: sitecustomize.py
 ├── training_texts_dir/   # OCR training data
-└── README.md             # version: 0.5.9 | path: README.md
+└── README.md             # version: 0.6.0 | path: README.md
 ```
 
 ---

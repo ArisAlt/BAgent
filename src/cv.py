@@ -1,13 +1,18 @@
-# version: 0.3.4
+# version: 0.3.5
 # path: src/cv.py
 
 import cv2
 import numpy as np
-from PIL import Image
+
+try:
+    from PIL import Image
+except Exception:  # pragma: no cover - allow dummy PIL stubs
+    Image = None
 import threading
 import queue
 import difflib
 from .ocr import OcrEngine
+
 
 class CvEngine:
     def __init__(self, ocr=None):
@@ -20,7 +25,9 @@ class CvEngine:
         self.lock_threshold = 0.8
         self.ocr = ocr or OcrEngine()
 
-    def detect_elements(self, img, templates, threshold=0.8, multi_scale=False, scales=None):
+    def detect_elements(
+        self, img, templates, threshold=0.8, multi_scale=False, scales=None
+    ):
         """
         Detect UI elements in an image using template matching.
         :param img: Input image as a numpy array or PIL Image.
@@ -39,17 +46,26 @@ class CvEngine:
             template_orig = cv2.imread(template_path, cv2.IMREAD_GRAYSCALE)
             scale_list = scales if multi_scale else [1.0]
             for scale in scale_list:
-                template = cv2.resize(template_orig, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+                template = cv2.resize(
+                    template_orig,
+                    None,
+                    fx=scale,
+                    fy=scale,
+                    interpolation=cv2.INTER_AREA,
+                )
                 res = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
                 min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
                 if max_val > threshold:
-                    detected_elements.append({
-                        'name': name,
-                        'position': max_loc,
-                        'confidence': max_val,
-                        'scale': scale
-                    })
+                    detected_elements.append(
+                        {
+                            "name": name,
+                            "position": max_loc,
+                            "confidence": max_val,
+                            "scale": scale,
+                        }
+                    )
         return detected_elements
+
     def is_module_active(self, slot_img):
         """
         Detect whether a ship module (laser, etc.) is currently active based on brightness.
@@ -77,9 +93,19 @@ class CvEngine:
             centre or ``None`` if no ore text was found.
         """
         default_ores = [
-            "veldspar", "scordite", "plagioclase", "pyroxeres",
-            "omber", "kernite", "jaspet", "hemorphite", "hedbergite",
-            "gneiss", "ochre", "spodumain", "mercoxit"
+            "veldspar",
+            "scordite",
+            "plagioclase",
+            "pyroxeres",
+            "omber",
+            "kernite",
+            "jaspet",
+            "hemorphite",
+            "hedbergite",
+            "gneiss",
+            "ochre",
+            "spodumain",
+            "mercoxit",
         ]
         ore_names = [o.lower() for o in (ore_names or default_ores)]
 
@@ -87,11 +113,18 @@ class CvEngine:
         data = self.ocr.extract_data(gray)
 
         for entry in data:
-            word = entry['text'].strip().lower()
+            word = entry["text"].strip().lower()
             if not word:
                 continue
-            if word in ore_names or difflib.get_close_matches(word, ore_names, n=1, cutoff=0.7):
-                x, y, w, h = entry['left'], entry['top'], entry['width'], entry['height']
+            if word in ore_names or difflib.get_close_matches(
+                word, ore_names, n=1, cutoff=0.7
+            ):
+                x, y, w, h = (
+                    entry["left"],
+                    entry["top"],
+                    entry["width"],
+                    entry["height"],
+                )
                 return (x + w // 2, y + h // 2)
         return None
 
@@ -107,7 +140,9 @@ class CvEngine:
             img = np.array(img)
         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         edges = cv2.Canny(img_gray, threshold1, threshold2)
-        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
         return contours
 
     def filter_by_color(self, img, lower_bound, upper_bound):
@@ -137,11 +172,12 @@ class CvEngine:
 
         annotated_img = img.copy()
         for elem in elements:
-            x, y = elem['position']
-            w, h = template_shapes[elem['name']]
-            w, h = int(w * elem.get('scale', 1.0)), int(h * elem.get('scale', 1.0))
+            x, y = elem["position"]
+            w, h = template_shapes[elem["name"]]
+            w, h = int(w * elem.get("scale", 1.0)), int(h * elem.get("scale", 1.0))
             cv2.rectangle(annotated_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
         return annotated_img
+
     def detect_target_lock(self, img):
         """
         Match the red crosshair target-lock icon inside the is_target_locked ROI.
@@ -154,7 +190,10 @@ class CvEngine:
         result = cv2.matchTemplate(gray, self.lock_template, cv2.TM_CCOEFF_NORMED)
         _, max_val, _, _ = cv2.minMaxLoc(result)
         return max_val > self.lock_threshold
-    def queue_image_for_detection(self, img, templates, threshold=0.8, multi_scale=False, scales=None):
+
+    def queue_image_for_detection(
+        self, img, templates, threshold=0.8, multi_scale=False, scales=None
+    ):
         """
         Add an image and templates to the processing queue.
         :param img: Image to process.
@@ -177,6 +216,8 @@ class CvEngine:
         """
         while True:
             img, templates, threshold, multi_scale, scales = self.task_queue.get()
-            result = self.detect_elements(img, templates, threshold, multi_scale, scales)
+            result = self.detect_elements(
+                img, templates, threshold, multi_scale, scales
+            )
             self.result_queue.put(result)
             self.task_queue.task_done()

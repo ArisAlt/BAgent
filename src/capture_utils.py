@@ -1,11 +1,16 @@
-# version: 0.8.1
+# version: 0.8.2
 # path: src/capture_utils.py
 
 import cv2
 import numpy as np
 import ctypes
 from ctypes.wintypes import RECT
-from logger import get_logger
+
+try:
+    from .logger import get_logger  # package import
+except ImportError:  # pragma: no cover - fallback for direct execution
+    from logger import get_logger
+
 try:
     import win32gui
     import win32ui
@@ -21,6 +26,7 @@ if hasattr(ctypes, "windll") and win32gui is not None:
     ctypes.windll.user32.SetProcessDPIAware()
 _first_foreground = True
 
+
 def get_window_rect(title: str):
     hwnd = ctypes.windll.user32.FindWindowW(0, title)
     if hwnd == 0:
@@ -28,6 +34,7 @@ def get_window_rect(title: str):
     rect = RECT()
     ctypes.windll.user32.GetWindowRect(hwnd, ctypes.pointer(rect))
     return (rect.left, rect.top, rect.right, rect.bottom), hwnd
+
 
 def capture_screen(select_region=False, window_title="EVE - CitizenZero"):
     """
@@ -40,7 +47,9 @@ def capture_screen(select_region=False, window_title="EVE - CitizenZero"):
         # headless fallback for tests
         img = np.zeros((10, 10, 3), dtype=np.uint8)
         if select_region:
-            roi = cv2.selectROI("Select Region", img, showCrosshair=True, fromCenter=False)
+            roi = cv2.selectROI(
+                "Select Region", img, showCrosshair=True, fromCenter=False
+            )
             if hasattr(cv2, "destroyWindow"):
                 try:
                     cv2.destroyWindow("Select Region")
@@ -72,9 +81,9 @@ def capture_screen(select_region=False, window_title="EVE - CitizenZero"):
         _first_foreground = False
 
     hwnd_dc = win32gui.GetWindowDC(hwnd)
-    mfc_dc  = win32ui.CreateDCFromHandle(hwnd_dc)
+    mfc_dc = win32ui.CreateDCFromHandle(hwnd_dc)
     save_dc = mfc_dc.CreateCompatibleDC()
-    bmp     = win32ui.CreateBitmap()
+    bmp = win32ui.CreateBitmap()
     bmp.CreateCompatibleBitmap(mfc_dc, width, height)
     save_dc.SelectObject(bmp)
 
@@ -86,7 +95,7 @@ def capture_screen(select_region=False, window_title="EVE - CitizenZero"):
 
     bmp_info = bmp.GetInfo()
     bmp_str = bmp.GetBitmapBits(True)
-    img = np.frombuffer(bmp_str, dtype='uint8').reshape((height, width, 4))
+    img = np.frombuffer(bmp_str, dtype="uint8").reshape((height, width, 4))
 
     # Cleanup
     win32gui.DeleteObject(bmp.GetHandle())
@@ -97,7 +106,9 @@ def capture_screen(select_region=False, window_title="EVE - CitizenZero"):
     img_bgr = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
     if select_region:
-        roi = cv2.selectROI("Select Region", img_bgr, showCrosshair=True, fromCenter=False)
+        roi = cv2.selectROI(
+            "Select Region", img_bgr, showCrosshair=True, fromCenter=False
+        )
         if hasattr(cv2, "destroyWindow"):
             try:
                 cv2.destroyWindow("Select Region")
@@ -109,6 +120,7 @@ def capture_screen(select_region=False, window_title="EVE - CitizenZero"):
         return (x, y, x + w, y + h)
 
     return img_bgr
+
 
 # --- Test directly ---
 if __name__ == "__main__":
