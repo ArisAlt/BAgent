@@ -1,4 +1,4 @@
-# version: 0.1.1
+# version: 0.1.2
 # path: src/mining_actions.py
 """High level mining routine utilities.
 
@@ -15,11 +15,11 @@ import time
 import yaml
 import pyautogui
 
-from ui import Ui
-from roi_capture import RegionHandler
-from ocr import OcrEngine
-from cv import CvEngine
-import capture_utils
+from .ui import Ui
+from .roi_capture import RegionHandler
+from .ocr import OcrEngine
+from .cv import CvEngine
+from . import capture_utils
 
 
 class MiningActions:
