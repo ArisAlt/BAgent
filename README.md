@@ -58,8 +58,7 @@ window title is built from `src/config/pilot_name.txt`; override it with
 `--window-title`.
 
 ```bash
-python data_recorder.py --manual --log logs/demonstrations/my_log.jsonl \
-    --window-title "EVE - MyCharacter"
+python data_recorder.py --manual --log logs/demonstrations/my_log.jsonl  --window-title "EVE - MyCharacter"
 ```
 
 Train a behavior cloning model from the recorded file:
