@@ -1,4 +1,4 @@
-# version: 0.6.1
+# version: 0.6.2
 # path: src/bot_core.py
 
 import sys
@@ -8,7 +8,7 @@ import re
 import pyautogui
 import cv2
 from PySide6 import QtWidgets, QtCore, QtGui
-from logger import get_logger
+from .logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -21,6 +21,7 @@ from .env import EveEnv
 from .agent import AIPilot
 from .ui import Ui
 
+
 class EveBot:
     def __init__(self, model_path=None):
         # Initialize environment, agent, UI, and FSM
@@ -32,16 +33,16 @@ class EveBot:
         self.rh = RegionHandler()
         self.ocr = OcrEngine()
         self.cv = CvEngine()
-        self.mining = MiningActions(ui=self.ui,
-                                    region_handler=self.rh,
-                                    ocr=self.ocr,
-                                    cv=self.cv)
+        self.mining = MiningActions(
+            ui=self.ui, region_handler=self.rh, ocr=self.ocr, cv=self.cv
+        )
         self.gui_logger = None
         self.reward_label = None
         self.integrity_label = None
 
         self.mode = "auto"
         self.pending_action = None
+
     def log(self, message, level="info"):
         getattr(logger, level, logger.info)(message)
         timestamped = f"[{time.strftime('%H:%M:%S')}] {message}"
@@ -74,6 +75,7 @@ class EveBot:
 
     def _main_loop(self):
         import capture_utils
+
         while self.running:
             if self.mode == "manual":
                 time.sleep(0.1)
@@ -86,7 +88,7 @@ class EveBot:
                 time.sleep(0.1)
                 continue
             screen = capture_utils.capture_screen(select_region=False)
-            if self.fsm.state.name == 'MINING':
+            if self.fsm.state.name == "MINING":
                 self._do_mining_routine(screen)
             reward = self.env._compute_reward()
             if self.reward_label:
@@ -101,12 +103,12 @@ class EveBot:
             self.log("⚠️ Hostiles detected")
 
         # 1. CARGO HOLD CHECK
-        cargo_box = self.rh.load('mining_cargo_hold_capacity')
+        cargo_box = self.rh.load("mining_cargo_hold_capacity")
         if cargo_box:
             x1, y1, x2, y2 = cargo_box
             crop = screen[y1:y2, x1:x2]
             text = self.ocr.extract_text(crop)
-            match = re.search(r'(\d+)', text)
+            match = re.search(r"(\d+)", text)
             if match:
                 pct = int(match.group(1))
                 self.log(f"📦 Cargo: {pct}%")
@@ -118,7 +120,7 @@ class EveBot:
                     return
 
         # 2. LASER MODULES
-        slots = ['module_slot1', 'module_slot2', 'module_slot3']
+        slots = ["module_slot1", "module_slot2", "module_slot3"]
         active = False
         for slot in slots:
             box = self.rh.load(slot)
@@ -210,21 +212,42 @@ class BotGui(QtWidgets.QWidget):
         if add:
             add(self.mode_label)
         if hasattr(QtWidgets, "QShortcut"):
-            QtWidgets.QShortcut(QtGui.QKeySequence("F9"), self, activated=lambda: self._switch_mode("auto"))
-            QtWidgets.QShortcut(QtGui.QKeySequence("F10"), self, activated=lambda: self._switch_mode("manual"))
-            QtWidgets.QShortcut(QtGui.QKeySequence("F11"), self, activated=lambda: self._switch_mode("assist"))
-            QtWidgets.QShortcut(QtGui.QKeySequence("F12"), self, activated=self.bot.confirm_suggestion)
+            QtWidgets.QShortcut(
+                QtGui.QKeySequence("F9"),
+                self,
+                activated=lambda: self._switch_mode("auto"),
+            )
+            QtWidgets.QShortcut(
+                QtGui.QKeySequence("F10"),
+                self,
+                activated=lambda: self._switch_mode("manual"),
+            )
+            QtWidgets.QShortcut(
+                QtGui.QKeySequence("F11"),
+                self,
+                activated=lambda: self._switch_mode("assist"),
+            )
+            QtWidgets.QShortcut(
+                QtGui.QKeySequence("F12"), self, activated=self.bot.confirm_suggestion
+            )
 
         self.bot = EveBot(model_path=None)
         self.bot.gui_logger = self.log_area
         self.bot.reward_label = self.reward_label
 
-        if hasattr(self.start_btn, "clicked") and hasattr(self.start_btn.clicked, "connect"):
+        if hasattr(self.start_btn, "clicked") and hasattr(
+            self.start_btn.clicked, "connect"
+        ):
             self.start_btn.clicked.connect(self.bot.start)
-        if hasattr(self.stop_btn, "clicked") and hasattr(self.stop_btn.clicked, "connect"):
+        if hasattr(self.stop_btn, "clicked") and hasattr(
+            self.stop_btn.clicked, "connect"
+        ):
             self.stop_btn.clicked.connect(self.bot.stop)
-        if hasattr(self.override_btn, "clicked") and hasattr(self.override_btn.clicked, "connect"):
+        if hasattr(self.override_btn, "clicked") and hasattr(
+            self.override_btn.clicked, "connect"
+        ):
             self.override_btn.clicked.connect(self._send_manual)
+
     def _switch_mode(self, mode):
         self.bot.set_mode(mode)
         if hasattr(self.mode_label, "setText"):
