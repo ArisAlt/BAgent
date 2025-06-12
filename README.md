@@ -1,5 +1,5 @@
 # BAgent
-# version: 0.3.4
+# version: 0.3.5
 # path: README.md
 
 
@@ -146,6 +146,10 @@ omit `--manual` for automated playback. The default title comes from
 
 As of version 0.4.4 the recorder stores the pre-action observation in the
 pickled buffer so training from `demo_buffer.pkl` matches the JSONL log.
+
+Frame captures are now validated. If `env.ui.capture()` returns `None`,
+the step is skipped and a warning is logged. After five consecutive
+failures recording aborts to prevent empty data.
 
 
 ### Using `run_start.py`

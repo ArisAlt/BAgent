@@ -1,4 +1,4 @@
-# version: 0.4.6
+# version: 0.4.7
 # path: data_recorder.py
 
 import pickle
@@ -12,6 +12,9 @@ from threading import Event
 from src.env import EveEnv
 from src.config import get_window_title
 from stable_baselines3 import PPO
+from src.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def _map_click(env, x, y):
@@ -92,6 +95,7 @@ def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True,
     obs = env.reset()
     stop_event = Event()
 
+    failure_count = 0
     with open(log_path, 'a') as log_file:
         for i in range(num_samples):
             if stop_event.is_set():
@@ -113,6 +117,15 @@ def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True,
                 label = f"random_{action}"
 
             frame = env.ui.capture()
+            if frame is None:
+                failure_count += 1
+                logger.warning("[Recorder] Capture returned None; skipping step")
+                if failure_count >= 5:
+                    logger.error("[Recorder] Too many capture failures. Aborting")
+                    break
+                continue
+            failure_count = 0
+
             ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             fp = os.path.join(demo_dir, f"{ts}.png")
             cv2.imwrite(fp, frame)
