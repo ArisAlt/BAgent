@@ -1,7 +1,7 @@
 # EVE Online Bot Project Scaffold
 
-> version: 0.5.8
-> updated: use relative logger imports and bump versions accordingly.
+> version: 0.5.9
+> updated: document data_recorder usage and bump README version.
 
 ---
 
@@ -51,7 +51,7 @@ BAgent/
 │   └── test_replay_session.py     # version: 0.1.0 | path: tests/test_replay_session.py
 ├── sitecustomize.py      # version: 0.1.0 | path: sitecustomize.py
 ├── training_texts_dir/   # OCR training data
-└── README.md             # version: 0.7.0 | path: README.md
+└── README.md             # version: 0.7.1 | path: README.md
 ```
 
 ---
