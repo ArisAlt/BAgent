@@ -1,5 +1,7 @@
 # EVE Online Bot Project Scaffold
 
+> version: 0.6.1
+> updated: restore README entry in directory list
 
 ---
 
@@ -49,7 +51,8 @@ BAgent/
 │   └── test_replay_session.py     # version: 0.1.0 | path: tests/test_replay_session.py
 ├── sitecustomize.py      # version: 0.1.0 | path: sitecustomize.py
 ├── training_texts_dir/   # OCR training data
-
+└── README.md             # version: 0.7.3 | path: README.md
+```
 
 ---
 
