@@ -1,7 +1,5 @@
 # EVE Online Bot Project Scaffold
 
-> version: 0.6.0
-> updated: add End key for data recorder and bump README version.
 
 ---
 
@@ -51,8 +49,7 @@ BAgent/
 │   └── test_replay_session.py     # version: 0.1.0 | path: tests/test_replay_session.py
 ├── sitecustomize.py      # version: 0.1.0 | path: sitecustomize.py
 ├── training_texts_dir/   # OCR training data
-└── README.md             # version: 0.7.2 | path: README.md
-```
+
 
 ---
 

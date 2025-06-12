@@ -1,5 +1,6 @@
 # BAgent
-<!-- version: 0.7.2 | path: README.md -->
+.2 | path: README.md -->
+
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
 
@@ -47,8 +48,7 @@ pip install -r requirements.txt
 
 Record demonstrations with `data_recorder.py`. Pass `--manual` to capture your
 own actions; omit the flag for automatic playback. Logs are written to
-`logs/demonstrations/log.jsonl` by default. Press the **End** key at any time to
-stop recording early:
+
 
 ```bash
 python data_recorder.py --manual
@@ -133,8 +133,7 @@ The recorder listens for mouse clicks and key presses while the EVE window is
 active. Each event is mapped to an action from the environment's action space
 and written to `logs/demonstrations/log.jsonl` along with a screenshot. Pass
 `--manual` to collect your own actions or omit the flag to record automated
-playback. Press **End** to terminate recording. The resulting JSON log can be
-fed directly to the training scripts.
+
 
 ### Using `run_start.py`
 
