@@ -1,4 +1,4 @@
-# version: 0.5.1
+# version: 0.5.2
 # path: src/agent.py
 
 import os
@@ -15,12 +15,12 @@ import torch.nn as nn
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
-from pre_train_data import BCModel, train_bc as bc_train
+from .pre_train_data import BCModel, train_bc as bc_train
 
-from capture_utils import capture_screen
-from roi_capture import RegionHandler
-from state_machine import State, Event
-from env import EveEnv
+from .capture_utils import capture_screen
+from .roi_capture import RegionHandler
+from .state_machine import State, Event
+from .env import EveEnv
 
 
 class BCPolicy(nn.Module):

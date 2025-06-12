@@ -1,4 +1,4 @@
-# version: 0.4.5
+# version: 0.4.6
 # path: src/env.py
 
 try:
@@ -26,10 +26,10 @@ except Exception:  # pragma: no cover - allow import without gym
 
     spaces = types.SimpleNamespace(Discrete=DummyDiscrete, Box=DummyBox)
 import numpy as np
-from ocr import OcrEngine
-from cv import CvEngine
-from ui import Ui
-from roi_capture import RegionHandler
+from .ocr import OcrEngine
+from .cv import CvEngine
+from .ui import Ui
+from .roi_capture import RegionHandler
 
 class EveEnv(gym.Env):
     def __init__(self, reward_config=None):

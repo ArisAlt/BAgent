@@ -1,8 +1,7 @@
 # EVE Online Bot Project Scaffold
 
-> version: 0.5.4
-> updated: `agent` now appends the project root to `sys.path` for importing
-> `pre_train_data`, in addition to `roi_capture` inserting its own folder.
+> version: 0.5.5
+> updated: imports within `src` now use explicit relative form so modules like `ocr` load correctly when running scripts from the repository root.
 
 ---
 
@@ -10,18 +9,18 @@
 ```
 BAgent/
 ├── src/
-│   ├── bot_core.py       # version: 0.6.0 | path: src/bot_core.py
-│   ├── env.py            # version: 0.4.5 | path: src/env.py
-│   ├── agent.py          # version: 0.5.1 | path: src/agent.py
+│   ├── bot_core.py       # version: 0.6.1 | path: src/bot_core.py
+│   ├── env.py            # version: 0.4.6 | path: src/env.py
+│   ├── agent.py          # version: 0.5.2 | path: src/agent.py
 │   ├── ocr.py            # version: 0.3.5 | path: src/ocr.py
-│   ├── cv.py             # version: 0.3.3 | path: src/cv.py
-│   ├── ui.py             # version: 0.3.7 | path: src/ui.py  
+│   ├── cv.py             # version: 0.3.4 | path: src/cv.py
+│   ├── ui.py             # version: 0.3.8 | path: src/ui.py
 │   ├── capture_utils.py  # version: 0.8.1 | path: src/capture_utils.py
 │   ├── logger.py         # version: 0.1.0 | path: src/logger.py
 │   ├── roi_capture.py    # version: 0.2.5 | path: src/roi_capture.py
-│   ├── mining_actions.py # version: 0.1.1 | path: src/mining_actions.py
+│   ├── mining_actions.py # version: 0.1.2 | path: src/mining_actions.py
 │   ├── ocr_finetune.py   # version: 0.1.0 | path: src/ocr_finetune.py
-│   ├── roi_live_overlay.py # version: 0.3.0 | path: src/roi_live_overlay.py
+│   ├── roi_live_overlay.py # version: 0.3.1 | path: src/roi_live_overlay.py
 │   ├── state_machine.py  # version: 0.2.0 | path: src/state_machine.py
 │   ├── config/
 │   │   └── agent_config.yaml # version: 0.1.0 | path: src/config/agent_config.yaml
@@ -51,7 +50,7 @@ BAgent/
 │   └── test_replay_session.py     # version: 0.1.0 | path: tests/test_replay_session.py
 ├── sitecustomize.py      # version: 0.1.0 | path: sitecustomize.py
 ├── training_texts_dir/   # OCR training data
-└── README.md             # version: 0.5.7 | path: README.md
+└── README.md             # version: 0.5.8 | path: README.md
 ```
 
 ---
@@ -77,6 +76,8 @@ BAgent/
     and creates validation splits via `train_test_split` before training the PyTorch model.
   - `agent.py` prepends the project root to `sys.path` so `pre_train_data` can
     be imported when running modules from the `src` directory.
+  - Imports within `src` are now relative (e.g. `from .ocr import OcrEngine`) to
+    avoid `ModuleNotFoundError` when executing scripts directly.
 - **Testing & Validation:**
   - `test_env.py` for quick ROI and env step sanity checks.
   - `test_gui_cli_integration.py` exercises ROI/UI functionality via the GUI and CLI.
