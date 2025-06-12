@@ -1,4 +1,4 @@
-# version: 0.4.5
+# version: 0.4.6
 # path: data_recorder.py
 
 import pickle
@@ -10,6 +10,7 @@ import cv2
 from pynput import mouse, keyboard
 from threading import Event
 from src.env import EveEnv
+from src.config import get_window_title
 from stable_baselines3 import PPO
 
 
@@ -72,7 +73,9 @@ def _wait_for_event(env, stop_event=None):
 
 
 def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True,
-                model_path=None, log_path=None, window_title="EVE - CitizenZero"):
+                model_path=None, log_path=None, window_title=None):
+    if window_title is None:
+        window_title = get_window_title()
     env = EveEnv(window_title=window_title)
     demo_buffer = []
     demo_dir = os.path.join('logs', 'demonstrations')
@@ -138,7 +141,8 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, default=None)
     parser.add_argument("--log", type=str, default=None,
                         help="Path to JSONL log file")
-    parser.add_argument("--window-title", type=str, default="EVE - CitizenZero",
+    parser.add_argument("--window-title", type=str,
+                        default=get_window_title(),
                         help="Game window title to capture")
     args = parser.parse_args()
 

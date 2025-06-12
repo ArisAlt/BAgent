@@ -1,4 +1,4 @@
-# version: 0.8.2
+# version: 0.8.3
 # path: src/capture_utils.py
 
 import cv2
@@ -36,12 +36,20 @@ def get_window_rect(title: str):
     return (rect.left, rect.top, rect.right, rect.bottom), hwnd
 
 
-def capture_screen(select_region=False, window_title="EVE - CitizenZero"):
+def capture_screen(select_region=False, window_title=None):
     """
     Capture a window using PrintWindow (safest GDI method for layered content).
     Works best when EVE is not fullscreen-exclusive.
     """
     global _first_foreground
+
+    if window_title is None:
+        try:
+            from .config import get_window_title
+        except Exception:  # pragma: no cover - fallback for direct execution
+            from config import get_window_title
+
+        window_title = get_window_title()
 
     if win32gui is None:
         # headless fallback for tests
@@ -124,7 +132,9 @@ def capture_screen(select_region=False, window_title="EVE - CitizenZero"):
 
 # --- Test directly ---
 if __name__ == "__main__":
-    frame = capture_screen(window_title="EVE - CitizenZero")
+    from .config import get_window_title
+
+    frame = capture_screen(window_title=get_window_title())
     if frame is not None:
         cv2.imshow("PrintWindow Capture", frame)
         cv2.waitKey(0)
