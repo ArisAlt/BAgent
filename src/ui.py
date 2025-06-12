@@ -1,4 +1,4 @@
-# version: 0.3.8
+# version: 0.4.0
 # path: src/ui.py
 
 import pyautogui
@@ -8,16 +8,20 @@ import threading
 import random
 from .capture_utils import capture_screen
 from .roi_capture import RegionHandler
+from .config import get_window_title
 
 class Ui:
-    def __init__(self, capture_region=None):
+    def __init__(self, capture_region=None, window_title=None):
+        if window_title is None:
+            window_title = get_window_title()
         self.capture_region = capture_region
+        self.window_title = window_title
         self.region_handler = RegionHandler()
         self.lock = threading.Lock()
 
     def capture(self):
         with self.lock:
-            return capture_screen(self.capture_region)
+            return capture_screen(self.capture_region, window_title=self.window_title)
 
     def click(self, x, y, duration=0.1, jitter=5):
         with self.lock:

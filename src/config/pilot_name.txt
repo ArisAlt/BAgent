@@ -1,0 +1,4 @@
+# version: 0.1.0
+# path: src/config/pilot_name.txt
+CitizenZero
+

@@ -6,15 +6,15 @@
 ## Directory Structure
 ```
 BAgent/
-├── README.md           # version: 0.3.1 | path: README.md
+├── README.md           # version: 0.3.3 | path: README.md
 ├── src/
 │   ├── __init__.py       # version: 0.1.0 | path: src/__init__.py
 │   ├── bot_core.py       # version: 0.6.2 | path: src/bot_core.py
-│   ├── env.py            # version: 0.4.7 | path: src/env.py
+│   ├── env.py            # version: 0.4.9 | path: src/env.py
 │   ├── agent.py          # version: 0.5.2 | path: src/agent.py
 │   ├── ocr.py            # version: 0.3.7 | path: src/ocr.py
 │   ├── cv.py             # version: 0.3.5 | path: src/cv.py
-│   ├── ui.py             # version: 0.3.8 | path: src/ui.py
+│   ├── ui.py             # version: 0.4.0 | path: src/ui.py
 │   ├── capture_utils.py  # version: 0.8.2 | path: src/capture_utils.py
 │   ├── logger.py         # version: 0.1.0 | path: src/logger.py
 │   ├── roi_capture.py    # version: 0.2.5 | path: src/roi_capture.py
@@ -23,14 +23,15 @@ BAgent/
 │   ├── roi_live_overlay.py # version: 0.3.1 | path: src/roi_live_overlay.py
 │   ├── state_machine.py  # version: 0.2.0 | path: src/state_machine.py
 │   ├── config/
-│   │   └── agent_config.yaml # version: 0.1.0 | path: src/config/agent_config.yaml
+│   │   ├── agent_config.yaml # version: 0.1.0 | path: src/config/agent_config.yaml
+│   │   └── pilot_name.txt    # version: 0.1.0 | path: src/config/pilot_name.txt
 │   └── roi_screenshots/  # ROI screenshot samples
 ├── env.py               # version: 0.1.0 | path: env.py
 ├── roi_capture.py       # version: 0.1.2 | path: roi_capture.py
 ├── bot_core.py          # version: 0.1.0 | path: bot_core.py
 #   └─ thin wrappers re-exporting the real modules under src/
 ├── run_start.py          # version: 0.3.3 | path: run_start.py
-├── data_recorder.py      # version: 0.4.4 | path: data_recorder.py
+├── data_recorder.py      # version: 0.4.6 | path: data_recorder.py
 ├── export_ocr_samples.py # version: 0.1.3 | path: export_ocr_samples.py
 ├── generate_box_files.py # version: 0.1.1 | path: generate_box_files.py
 ├── pre_train_data.py     # version: 0.3.0 | path: pre_train_data.py
@@ -65,6 +66,7 @@ BAgent/
 - **Data & Training Pipeline:**
   - `data_recorder.py` supports manual/automatic demo collection and can be
     stopped with the **End** key.
+  - Optional `--window-title` selects the EVE window (default is read from `src/config/pilot_name.txt`).
   - Tools for dataset generation and preprocessing.
   - CLI entry via `run_start.py` and PySide6 GUI support.
   - `agent.py` provides BC training (`train_bc_from_data`) and inference (`load_and_predict`).

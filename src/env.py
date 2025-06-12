@@ -1,4 +1,4 @@
-# version: 0.4.7
+# version: 0.4.9
 # path: src/env.py
 
 try:
@@ -51,10 +51,13 @@ except Exception:  # pragma: no cover - allow tests without OpenCV
 
 from .ui import Ui
 from .roi_capture import RegionHandler
+from .config import get_window_title
 
 
 class EveEnv(gym.Env):
-    def __init__(self, reward_config=None):
+    def __init__(self, reward_config=None, window_title=None):
+        if window_title is None:
+            window_title = get_window_title()
         super(EveEnv, self).__init__()
         self.ocr = OcrEngine()
         try:
@@ -66,7 +69,7 @@ class EveEnv(gym.Env):
                     return []
 
             self.cv = CvEngine()
-        self.ui = Ui()
+        self.ui = Ui(window_title=window_title)
         self.region_handler = RegionHandler()
 
         # Load all ROI names from YAML
