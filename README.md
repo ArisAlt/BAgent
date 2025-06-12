@@ -1,5 +1,5 @@
 # BAgent
-<!-- version: 0.5.7 | path: README.md -->
+<!-- version: 0.5.8 | path: README.md -->
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
 
@@ -22,6 +22,10 @@ importing sibling modules. Similarly, `src/agent.py` adds the project root to
 `sys.path` so it can import `pre_train_data` even when scripts are launched from
 within the `src` directory. These tweaks prevent `ModuleNotFoundError` when the
 wrappers are used without modifying `PYTHONPATH`.
+Recent updates switched intra-package imports to explicit relative form
+(`from .ocr import OcrEngine`, etc.). If you encounter `ModuleNotFoundError`
+for modules like `ocr`, ensure you're running commands from the repository root
+or that `src/` is on `PYTHONPATH`.
 
 Run tests with:
 

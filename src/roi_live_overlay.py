@@ -1,10 +1,10 @@
-# version: 0.3.0
+# version: 0.3.1
 # path: src/roi_live_overlay.py
 
 import cv2
 import time
-from roi_capture import RegionHandler
-from capture_utils import capture_screen
+from .roi_capture import RegionHandler
+from .capture_utils import capture_screen
 
 def draw_overlay(rois, screen):
     for name, (x1, y1, x2, y2) in rois.items():

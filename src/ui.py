@@ -1,4 +1,4 @@
-# version: 0.3.7
+# version: 0.3.8
 # path: src/ui.py
 
 import pyautogui
@@ -6,8 +6,8 @@ import numpy as np
 import time
 import threading
 import random
-from capture_utils import capture_screen
-from roi_capture import RegionHandler
+from .capture_utils import capture_screen
+from .roi_capture import RegionHandler
 
 class Ui:
     def __init__(self, capture_region=None):

@@ -1,4 +1,4 @@
-# version: 0.3.3
+# version: 0.3.4
 # path: src/cv.py
 
 import cv2
@@ -7,7 +7,7 @@ from PIL import Image
 import threading
 import queue
 import difflib
-from ocr import OcrEngine
+from .ocr import OcrEngine
 
 class CvEngine:
     def __init__(self, ocr=None):
