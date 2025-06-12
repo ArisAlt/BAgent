@@ -6,6 +6,7 @@
 ## Directory Structure
 ```
 BAgent/
+├── README.md           # version: 0.2.0 | path: README.md
 ├── src/
 │   ├── __init__.py       # version: 0.1.0 | path: src/__init__.py
 │   ├── bot_core.py       # version: 0.6.2 | path: src/bot_core.py

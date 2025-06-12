@@ -1,5 +1,6 @@
+# version: 0.2.0
+# path: README.md
 # BAgent
-.2 | path: README.md -->
 
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
