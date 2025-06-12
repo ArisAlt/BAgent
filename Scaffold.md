@@ -1,7 +1,5 @@
 # EVE Online Bot Project Scaffold
 
-> version: 0.5.9
-> updated: document data_recorder usage and bump README version.
 
 ---
 
@@ -31,7 +29,7 @@ BAgent/
 ├── bot_core.py          # version: 0.1.0 | path: bot_core.py
 #   └─ thin wrappers re-exporting the real modules under src/
 ├── run_start.py          # version: 0.3.3 | path: run_start.py
-├── data_recorder.py      # version: 0.4.1 | path: data_recorder.py
+├── data_recorder.py      # version: 0.4.2 | path: data_recorder.py
 ├── export_ocr_samples.py # version: 0.1.3 | path: export_ocr_samples.py
 ├── generate_box_files.py # version: 0.1.1 | path: generate_box_files.py
 ├── pre_train_data.py     # version: 0.3.0 | path: pre_train_data.py
@@ -51,8 +49,7 @@ BAgent/
 │   └── test_replay_session.py     # version: 0.1.0 | path: tests/test_replay_session.py
 ├── sitecustomize.py      # version: 0.1.0 | path: sitecustomize.py
 ├── training_texts_dir/   # OCR training data
-└── README.md             # version: 0.7.1 | path: README.md
-```
+
 
 ---
 
@@ -65,7 +62,8 @@ BAgent/
   - Dynamic ROI loading, text & detection regions, cargo capacity parsing.  
   - Expanded action set from EVE-Master internal nodes.  
 - **Data & Training Pipeline:**
-  - `data_recorder.py` supports manual/automatic demo collection.
+  - `data_recorder.py` supports manual/automatic demo collection and can be
+    stopped with the **End** key.
   - Tools for dataset generation and preprocessing.
   - CLI entry via `run_start.py` and PySide6 GUI support.
   - `agent.py` provides BC training (`train_bc_from_data`) and inference (`load_and_predict`).
@@ -178,6 +176,7 @@ pyyaml
   - ROI capture and validation logic moved to `roi_capture.py`.
 - **Data Recording & Pretraining**:
   - `data_recorder.py` logs frame screenshots, observations and semantic actions.
+  - Recording can be terminated early with the **End** key.
   - Scripts for behavior cloning from recorded data.
   - `agent.py` includes BC training and inference helpers.
   - `bot_core.py` central bot loop connecting all modules.
