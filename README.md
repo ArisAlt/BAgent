@@ -1,5 +1,5 @@
 # BAgent
-# version: 0.3.1
+# version: 0.3.2
 # path: README.md
 
 
@@ -50,10 +50,13 @@ pip install -r requirements.txt
 
 Record demonstrations with `data_recorder.py`. Pass `--manual` to capture your
 own actions; omit the flag for automatic playback. Use `--log` to specify the
-JSONL output (defaults to `logs/demonstrations/log_<timestamp>.jsonl`).
+JSONL output (defaults to `logs/demonstrations/log_<timestamp>.jsonl`). If your
+EVE client runs under a different window title, supply `--window-title` (default
+`"EVE - CitizenZero"`).
 
 ```bash
-python data_recorder.py --manual --log logs/demonstrations/my_log.jsonl
+python data_recorder.py --manual --log logs/demonstrations/my_log.jsonl \
+    --window-title "EVE - MyCharacter"
 ```
 
 Train a behavior cloning model from the recorded file:
@@ -135,7 +138,8 @@ The recorder listens for mouse clicks and key presses while the EVE window is
 active. Each event is mapped to an action from the environment's action space
 and written to `logs/demonstrations/log_<timestamp>.jsonl` by default. Pass
 `--log` to override the file path and `--manual` to collect your own actions;
-omit `--manual` for automated playback.
+omit `--manual` for automated playback. Use `--window-title` if the EVE window
+title differs from the default.
 
 As of version 0.4.4 the recorder stores the pre-action observation in the
 pickled buffer so training from `demo_buffer.pkl` matches the JSONL log.

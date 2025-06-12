@@ -1,4 +1,4 @@
-# version: 0.4.7
+# version: 0.4.8
 # path: src/env.py
 
 try:
@@ -54,7 +54,7 @@ from .roi_capture import RegionHandler
 
 
 class EveEnv(gym.Env):
-    def __init__(self, reward_config=None):
+    def __init__(self, reward_config=None, window_title="EVE - CitizenZero"):
         super(EveEnv, self).__init__()
         self.ocr = OcrEngine()
         try:
@@ -66,7 +66,7 @@ class EveEnv(gym.Env):
                     return []
 
             self.cv = CvEngine()
-        self.ui = Ui()
+        self.ui = Ui(window_title=window_title)
         self.region_handler = RegionHandler()
 
         # Load all ROI names from YAML
