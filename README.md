@@ -1,5 +1,5 @@
 # BAgent
-# version: 0.3.0
+# version: 0.3.1
 # path: README.md
 
 
@@ -136,6 +136,9 @@ active. Each event is mapped to an action from the environment's action space
 and written to `logs/demonstrations/log_<timestamp>.jsonl` by default. Pass
 `--log` to override the file path and `--manual` to collect your own actions;
 omit `--manual` for automated playback.
+
+As of version 0.4.4 the recorder stores the pre-action observation in the
+pickled buffer so training from `demo_buffer.pkl` matches the JSONL log.
 
 
 ### Using `run_start.py`
