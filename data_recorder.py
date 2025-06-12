@@ -1,4 +1,4 @@
-# version: 0.4.2
+# version: 0.4.3
 # path: data_recorder.py
 
 import pickle
@@ -71,12 +71,14 @@ def _wait_for_event(env, stop_event=None):
     return result['data']
 
 
-def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True, model_path=None):
+def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True, model_path=None, log_path=None):
     env = EveEnv()
     demo_buffer = []
     demo_dir = os.path.join('logs', 'demonstrations')
     os.makedirs(demo_dir, exist_ok=True)
-    log_path = os.path.join(demo_dir, 'log.jsonl')
+    if log_path is None:
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_path = os.path.join(demo_dir, f"log_{ts}.jsonl")
     model = None
     if model_path and os.path.exists(model_path):
         model = PPO.load(model_path, env=env)
@@ -145,8 +147,11 @@ if __name__ == "__main__":
     parser.add_argument("--samples", type=int, default=500)
     parser.add_argument("--manual", action="store_true")
     parser.add_argument("--model", type=str, default=None)
+    parser.add_argument("--log", type=str, default=None,
+                        help="Path to JSONL log file")
     args = parser.parse_args()
 
     record_data(filename=args.out, num_samples=args.samples,
-                manual=args.manual, model_path=args.model)
+                manual=args.manual, model_path=args.model,
+                log_path=args.log)
   

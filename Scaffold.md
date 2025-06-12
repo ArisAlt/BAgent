@@ -29,7 +29,7 @@ BAgent/
 ├── bot_core.py          # version: 0.1.0 | path: bot_core.py
 #   └─ thin wrappers re-exporting the real modules under src/
 ├── run_start.py          # version: 0.3.3 | path: run_start.py
-├── data_recorder.py      # version: 0.4.2 | path: data_recorder.py
+├── data_recorder.py      # version: 0.4.3 | path: data_recorder.py
 ├── export_ocr_samples.py # version: 0.1.3 | path: export_ocr_samples.py
 ├── generate_box_files.py # version: 0.1.1 | path: generate_box_files.py
 ├── pre_train_data.py     # version: 0.3.0 | path: pre_train_data.py
