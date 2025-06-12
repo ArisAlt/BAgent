@@ -1,5 +1,5 @@
 # BAgent
-# version: 0.3.3
+# version: 0.3.4
 # path: README.md
 
 
@@ -31,6 +31,9 @@ for modules like `ocr`, ensure you're running commands from the repository root
 or that `src/` is on `PYTHONPATH`. The directory now ships with a minimal
 `src/__init__.py` so the package is recognized even on Python versions that do
 not support implicit namespace packages.
+
+`Ui.capture` now always captures the full window and crops to the active
+region if one is loaded.
 
 Run tests with:
 

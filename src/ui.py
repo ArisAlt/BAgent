@@ -1,4 +1,4 @@
-# version: 0.4.0
+# version: 0.4.1
 # path: src/ui.py
 
 import pyautogui
@@ -21,7 +21,13 @@ class Ui:
 
     def capture(self):
         with self.lock:
-            return capture_screen(self.capture_region, window_title=self.window_title)
+            frame = capture_screen(select_region=False, window_title=self.window_title)
+            if frame is None:
+                return None
+            if self.capture_region:
+                x1, y1, x2, y2 = self.capture_region
+                frame = frame[y1:y2, x1:x2]
+            return frame
 
     def click(self, x, y, duration=0.1, jitter=5):
         with self.lock:
