@@ -1,4 +1,4 @@
-# version: 0.4.1
+# version: 0.4.2
 # path: data_recorder.py
 
 import pickle
@@ -29,8 +29,12 @@ def _map_key(env, key_name):
     return None, None
 
 
-def _wait_for_event(env):
-    """Block until a relevant mouse or keyboard event occurs."""
+def _wait_for_event(env, stop_event=None):
+    """Block until a relevant mouse or keyboard event occurs.
+
+    If the **End** key is pressed, ``stop_event`` will be set and ``None`` is
+    returned so callers can break their recording loop.
+    """
     result = {}
     done = Event()
 
@@ -49,6 +53,11 @@ def _wait_for_event(env):
             name = key.char.lower()
         except AttributeError:
             name = key.name.lower()
+        if name == 'end':
+            if stop_event is not None:
+                stop_event.set()
+            done.set()
+            return False
         idx, label = _map_key(env, name)
         if idx is not None:
             result['data'] = (idx, label)
@@ -75,11 +84,31 @@ def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True, model_
     mode = "manual" if manual else ("model" if model else "automatic")
     print(f"Starting {mode} data recording for {num_samples} samples...")
     obs = env.reset()
+    stop_event = Event()
+
+    def on_end_press(key):
+        try:
+            name = key.char.lower()
+        except AttributeError:
+            name = key.name.lower()
+        if name == 'end':
+            stop_event.set()
+            return False
+
+    end_listener = keyboard.Listener(on_press=on_end_press)
+    end_listener.start()
 
     with open(log_path, 'a') as log_file:
         for i in range(num_samples):
+            if stop_event.is_set():
+                break
             if manual:
-                idx, label = _wait_for_event(env)
+                data = _wait_for_event(env, stop_event)
+                if stop_event.is_set():
+                    break
+                if data is None:
+                    break
+                idx, label = data
                 action = idx
             elif model:
                 action, _ = model.predict(obs, deterministic=True)
@@ -102,6 +131,7 @@ def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True, model_
             if done:
                 obs = env.reset()
 
+    end_listener.stop()
     with open(filename, 'wb') as f:
         pickle.dump(demo_buffer, f)
     print(f"Data recording complete. Saved to {filename}")
