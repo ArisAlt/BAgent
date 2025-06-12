@@ -1,5 +1,5 @@
 # BAgent
-.2 | path: README.md -->
+0.3 | path: README.md -->
 
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
@@ -47,17 +47,17 @@ pip install -r requirements.txt
 ```
 
 Record demonstrations with `data_recorder.py`. Pass `--manual` to capture your
-own actions; omit the flag for automatic playback. Logs are written to
-
+own actions; omit the flag for automatic playback. Use `--log` to specify the
+JSONL output (defaults to `logs/demonstrations/log_<timestamp>.jsonl`).
 
 ```bash
-python data_recorder.py --manual
+python data_recorder.py --manual --log logs/demonstrations/my_log.jsonl
 ```
 
 Train a behavior cloning model from the recorded file:
 
 ```bash
-python pre_train_data.py --demos logs/demonstrations/log.jsonl --out bc_model.pt
+python pre_train_data.py --demos logs/demonstrations/demo.jsonl --out bc_model.pt
 ```
 
 Launch reinforcement learning or inference using `run_start.py`:
@@ -94,10 +94,10 @@ During runtime press **F9** for Auto, **F10** for Manual, and **F11** for Assist
 ## Behavior Cloning Pretraining
 
 1. Record demonstrations (frames + state logs saved under
-   `logs/demonstrations/`):
+   `logs/demonstrations/` by default):
 
 ```bash
-python data_recorder.py
+python data_recorder.py --log logs/demonstrations/demo.jsonl
 ```
 
 2. Train the BC model. `pre_train_data.py` uses scikit-learn's
@@ -105,7 +105,7 @@ python data_recorder.py
    create a validation split:
 
 ```bash
-python pre_train_data.py --demos logs/demonstrations/log.jsonl --out bc_model.pt
+python pre_train_data.py --demos logs/demonstrations/demo.jsonl --out bc_model.pt
 ```
 
 The script standardizes observations, splits the data into train/validation
@@ -123,7 +123,7 @@ python run_start.py --train --bc_model bc_model.pt --timesteps 50000
 ```python
 from src.agent import AIPilot
 pilot = AIPilot()
-pilot.train_bc_from_data('logs/demonstrations/log.jsonl', 'bc_clf.joblib')
+pilot.train_bc_from_data('logs/demonstrations/demo.jsonl', 'bc_clf.joblib')
 action_idx = pilot.load_and_predict({'obs': [0]*pilot.env.observation_space.shape[0]})
 ```
 
@@ -131,8 +131,9 @@ action_idx = pilot.load_and_predict({'obs': [0]*pilot.env.observation_space.shap
 
 The recorder listens for mouse clicks and key presses while the EVE window is
 active. Each event is mapped to an action from the environment's action space
-and written to `logs/demonstrations/log.jsonl` along with a screenshot. Pass
-`--manual` to collect your own actions or omit the flag to record automated
+and written to `logs/demonstrations/log_<timestamp>.jsonl` by default. Pass
+`--log` to override the file path and `--manual` to collect your own actions;
+omit `--manual` for automated playback.
 
 
 ### Using `run_start.py`
@@ -157,7 +158,7 @@ Visualize recorded demonstrations and compare against a trained model using
 validation metrics to a JSON file:
 
 ```bash
-python replay_session.py --log logs/demonstrations/log.jsonl --delay 300 \
+python replay_session.py --log logs/demonstrations/demo.jsonl --delay 300 \
     --model bc_model.pt --accuracy-out metrics.json
 ```
 
@@ -172,7 +173,7 @@ statistics. Press **q** to exit the viewer.
 Use `replay_correction.py` to modify incorrect actions during playback. Corrected samples are saved with a higher training weight.
 
 ```bash
-python replay_correction.py --log logs/demonstrations/log.jsonl --out corrected.jsonl --model bc_model.pt
+python replay_correction.py --log logs/demonstrations/demo.jsonl --out corrected.jsonl --model bc_model.pt
 ```
 
 ## Mining Helpers
