@@ -1,5 +1,5 @@
+<!-- version: 0.2 | path: README.md -->
 # BAgent
-.2 | path: README.md -->
 
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
@@ -133,6 +133,7 @@ The recorder listens for mouse clicks and key presses while the EVE window is
 active. Each event is mapped to an action from the environment's action space
 and written to `logs/demonstrations/log.jsonl` along with a screenshot. Pass
 `--manual` to collect your own actions or omit the flag to record automated
+playback. Press **End** at any time to stop recording early.
 
 
 ### Using `run_start.py`

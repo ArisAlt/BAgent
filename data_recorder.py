@@ -1,4 +1,4 @@
-# version: 0.4.2
+# version: 0.4.3
 # path: data_recorder.py
 
 import pickle
@@ -86,18 +86,6 @@ def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True, model_
     obs = env.reset()
     stop_event = Event()
 
-    def on_end_press(key):
-        try:
-            name = key.char.lower()
-        except AttributeError:
-            name = key.name.lower()
-        if name == 'end':
-            stop_event.set()
-            return False
-
-    end_listener = keyboard.Listener(on_press=on_end_press)
-    end_listener.start()
-
     with open(log_path, 'a') as log_file:
         for i in range(num_samples):
             if stop_event.is_set():
@@ -131,7 +119,6 @@ def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True, model_
             if done:
                 obs = env.reset()
 
-    end_listener.stop()
     with open(filename, 'wb') as f:
         pickle.dump(demo_buffer, f)
     print(f"Data recording complete. Saved to {filename}")
