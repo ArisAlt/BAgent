@@ -1,7 +1,7 @@
 # EVE Online Bot Project Scaffold
 
-> version: 0.5.5
-> updated: imports within `src` now use explicit relative form so modules like `ocr` load correctly when running scripts from the repository root.
+> version: 0.5.6
+> updated: added `src/__init__.py` and noted relative imports. The package now loads correctly across Python versions.
 
 ---
 
@@ -9,6 +9,7 @@
 ```
 BAgent/
 ├── src/
+│   ├── __init__.py       # version: 0.1.0 | path: src/__init__.py
 │   ├── bot_core.py       # version: 0.6.1 | path: src/bot_core.py
 │   ├── env.py            # version: 0.4.6 | path: src/env.py
 │   ├── agent.py          # version: 0.5.2 | path: src/agent.py
@@ -50,7 +51,7 @@ BAgent/
 │   └── test_replay_session.py     # version: 0.1.0 | path: tests/test_replay_session.py
 ├── sitecustomize.py      # version: 0.1.0 | path: sitecustomize.py
 ├── training_texts_dir/   # OCR training data
-└── README.md             # version: 0.5.8 | path: README.md
+└── README.md             # version: 0.5.9 | path: README.md
 ```
 
 ---

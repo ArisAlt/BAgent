@@ -1,5 +1,5 @@
 # BAgent
-<!-- version: 0.5.8 | path: README.md -->
+<!-- version: 0.5.9 | path: README.md -->
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
 
@@ -25,7 +25,9 @@ wrappers are used without modifying `PYTHONPATH`.
 Recent updates switched intra-package imports to explicit relative form
 (`from .ocr import OcrEngine`, etc.). If you encounter `ModuleNotFoundError`
 for modules like `ocr`, ensure you're running commands from the repository root
-or that `src/` is on `PYTHONPATH`.
+or that `src/` is on `PYTHONPATH`. The directory now ships with a minimal
+`src/__init__.py` so the package is recognized even on Python versions that do
+not support implicit namespace packages.
 
 Run tests with:
 
