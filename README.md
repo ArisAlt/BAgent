@@ -1,5 +1,5 @@
 # BAgent
-<!-- version: 0.7.0 | path: README.md -->
+<!-- version: 0.7.1 | path: README.md -->
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
 
@@ -45,12 +45,12 @@ cd BAgent
 pip install -r requirements.txt
 ```
 
-Record demonstrations with `data_recorder.py` (use `--manual True` to capture
-your own actions or `--manual False` for automated playback). Logs are written
-to `logs/demonstrations/` by default:
+Record demonstrations with `data_recorder.py`. Pass `--manual` to capture your
+own actions; omit the flag for automatic playback. Logs are written to
+`logs/demonstrations/log.jsonl` by default:
 
 ```bash
-python data_recorder.py --manual True --out logs/demonstrations/log.jsonl
+python data_recorder.py --manual
 ```
 
 Train a behavior cloning model from the recorded file:
@@ -92,10 +92,11 @@ During runtime press **F9** for Auto, **F10** for Manual, and **F11** for Assist
 
 ## Behavior Cloning Pretraining
 
-1. Record demonstrations (frames + state logs saved under `logs/demonstrations/`):
+1. Record demonstrations (frames + state logs saved under
+   `logs/demonstrations/`):
 
 ```bash
-python data_recorder.py --manual False
+python data_recorder.py
 ```
 
 2. Train the BC model. `pre_train_data.py` uses scikit-learn's
@@ -129,10 +130,9 @@ action_idx = pilot.load_and_predict({'obs': [0]*pilot.env.observation_space.shap
 
 The recorder listens for mouse clicks and key presses while the EVE window is
 active. Each event is mapped to an action from the environment's action space
-and written to `logs/demonstrations/log.jsonl` along with a screenshot. Use the
-`--manual` flag to switch between interactive collection (`True`) and automated
-replay (`False`). The output file can then be fed directly to the training
-scripts.
+and written to `logs/demonstrations/log.jsonl` along with a screenshot. Pass
+`--manual` to collect your own actions or omit the flag to record automated
+playback. The resulting JSON log can be fed directly to the training scripts.
 
 ### Using `run_start.py`
 
