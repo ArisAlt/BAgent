@@ -1,5 +1,5 @@
 # BAgent
-<!-- version: 0.6.0 | path: README.md -->
+<!-- version: 0.7.0 | path: README.md -->
 
 A toolkit for automating EVE Online interactions. The project includes a Gym environment, UI automation modules, and utilities for OCR and computer vision.
 
@@ -33,6 +33,36 @@ Run tests with:
 
 ```bash
 pytest -q
+```
+
+## Quick Start
+
+Clone the repository and install the required packages:
+
+```bash
+git clone <repo-url>
+cd BAgent
+pip install -r requirements.txt
+```
+
+Record demonstrations with `data_recorder.py` (use `--manual True` to capture
+your own actions or `--manual False` for automated playback). Logs are written
+to `logs/demonstrations/` by default:
+
+```bash
+python data_recorder.py --manual True --out logs/demonstrations/log.jsonl
+```
+
+Train a behavior cloning model from the recorded file:
+
+```bash
+python pre_train_data.py --demos logs/demonstrations/log.jsonl --out bc_model.pt
+```
+
+Launch reinforcement learning or inference using `run_start.py`:
+
+```bash
+python run_start.py --train --bc_model bc_model.pt --timesteps 50000
 ```
 
 ### Debug Logging
@@ -94,6 +124,22 @@ pilot = AIPilot()
 pilot.train_bc_from_data('logs/demonstrations/log.jsonl', 'bc_clf.joblib')
 action_idx = pilot.load_and_predict({'obs': [0]*pilot.env.observation_space.shape[0]})
 ```
+
+### Using `data_recorder.py`
+
+The recorder listens for mouse clicks and key presses while the EVE window is
+active. Each event is mapped to an action from the environment's action space
+and written to `logs/demonstrations/log.jsonl` along with a screenshot. Use the
+`--manual` flag to switch between interactive collection (`True`) and automated
+replay (`False`). The output file can then be fed directly to the training
+scripts.
+
+### Using `run_start.py`
+
+`run_start.py` acts as the main entry point for training or running the agent.
+Passing `--train` starts a PPO training loop, optionally initializing the policy
+from a behavior cloning checkpoint via `--bc_model`. Without `--train` the
+script loads the latest model under `logs/ppo/` and runs an evaluation episode.
 
 ### Running BC Inference
 

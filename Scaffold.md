@@ -1,6 +1,6 @@
 # EVE Online Bot Project Scaffold
 
-> version: 0.5.7
+> version: 0.5.8
 > updated: use relative logger imports and bump versions accordingly.
 
 ---
@@ -30,8 +30,8 @@ BAgent/
 ├── roi_capture.py       # version: 0.1.2 | path: roi_capture.py
 ├── bot_core.py          # version: 0.1.0 | path: bot_core.py
 #   └─ thin wrappers re-exporting the real modules under src/
-├── run_start.py          # version: 0.3.2 | path: run_start.py
-├── data_recorder.py      # version: 0.4.0 | path: data_recorder.py
+├── run_start.py          # version: 0.3.3 | path: run_start.py
+├── data_recorder.py      # version: 0.4.1 | path: data_recorder.py
 ├── export_ocr_samples.py # version: 0.1.3 | path: export_ocr_samples.py
 ├── generate_box_files.py # version: 0.1.1 | path: generate_box_files.py
 ├── pre_train_data.py     # version: 0.3.0 | path: pre_train_data.py
@@ -51,7 +51,7 @@ BAgent/
 │   └── test_replay_session.py     # version: 0.1.0 | path: tests/test_replay_session.py
 ├── sitecustomize.py      # version: 0.1.0 | path: sitecustomize.py
 ├── training_texts_dir/   # OCR training data
-└── README.md             # version: 0.6.0 | path: README.md
+└── README.md             # version: 0.7.0 | path: README.md
 ```
 
 ---
