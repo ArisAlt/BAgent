@@ -1,4 +1,4 @@
-# version: 0.4.2
+# version: 0.4.3
 # path: data_recorder.py
 
 import pickle
@@ -71,12 +71,14 @@ def _wait_for_event(env, stop_event=None):
     return result['data']
 
 
-def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True, model_path=None):
+def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True, model_path=None, log_path=None):
     env = EveEnv()
     demo_buffer = []
     demo_dir = os.path.join('logs', 'demonstrations')
     os.makedirs(demo_dir, exist_ok=True)
-    log_path = os.path.join(demo_dir, 'log.jsonl')
+    if log_path is None:
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_path = os.path.join(demo_dir, f"log_{ts}.jsonl")
     model = None
     if model_path and os.path.exists(model_path):
         model = PPO.load(model_path, env=env)
@@ -85,18 +87,6 @@ def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True, model_
     print(f"Starting {mode} data recording for {num_samples} samples...")
     obs = env.reset()
     stop_event = Event()
-
-    def on_end_press(key):
-        try:
-            name = key.char.lower()
-        except AttributeError:
-            name = key.name.lower()
-        if name == 'end':
-            stop_event.set()
-            return False
-
-    end_listener = keyboard.Listener(on_press=on_end_press)
-    end_listener.start()
 
     with open(log_path, 'a') as log_file:
         for i in range(num_samples):
@@ -131,7 +121,6 @@ def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True, model_
             if done:
                 obs = env.reset()
 
-    end_listener.stop()
     with open(filename, 'wb') as f:
         pickle.dump(demo_buffer, f)
     print(f"Data recording complete. Saved to {filename}")
@@ -145,8 +134,11 @@ if __name__ == "__main__":
     parser.add_argument("--samples", type=int, default=500)
     parser.add_argument("--manual", action="store_true")
     parser.add_argument("--model", type=str, default=None)
+    parser.add_argument("--log", type=str, default=None,
+                        help="Path to JSONL log file")
     args = parser.parse_args()
 
     record_data(filename=args.out, num_samples=args.samples,
-                manual=args.manual, model_path=args.model)
+                manual=args.manual, model_path=args.model,
+                log_path=args.log)
   
