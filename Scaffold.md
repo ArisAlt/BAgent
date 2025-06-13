@@ -6,7 +6,7 @@
 ## Directory Structure
 ```
 BAgent/
-├── README.md           # version: 0.3.5 | path: README.md
+├── README.md           # version: 0.3.6 | path: README.md
 ├── src/
 │   ├── __init__.py       # version: 0.1.0 | path: src/__init__.py
 │   ├── bot_core.py       # version: 0.6.2 | path: src/bot_core.py
@@ -14,8 +14,8 @@ BAgent/
 │   ├── agent.py          # version: 0.5.2 | path: src/agent.py
 │   ├── ocr.py            # version: 0.3.7 | path: src/ocr.py
 │   ├── cv.py             # version: 0.3.5 | path: src/cv.py
-│   ├── ui.py             # version: 0.4.1 | path: src/ui.py
-│   ├── capture_utils.py  # version: 0.8.2 | path: src/capture_utils.py
+│   ├── ui.py             # version: 0.4.2 | path: src/ui.py
+│   ├── capture_utils.py  # version: 0.8.4 | path: src/capture_utils.py
 │   ├── logger.py         # version: 0.1.0 | path: src/logger.py
 │   ├── roi_capture.py    # version: 0.2.5 | path: src/roi_capture.py
 │   ├── mining_actions.py # version: 0.1.2 | path: src/mining_actions.py
@@ -31,7 +31,7 @@ BAgent/
 ├── bot_core.py          # version: 0.1.0 | path: bot_core.py
 #   └─ thin wrappers re-exporting the real modules under src/
 ├── run_start.py          # version: 0.3.3 | path: run_start.py
-├── data_recorder.py      # version: 0.4.7 | path: data_recorder.py
+├── data_recorder.py      # version: 0.4.8 | path: data_recorder.py
 ├── export_ocr_samples.py # version: 0.1.3 | path: export_ocr_samples.py
 ├── generate_box_files.py # version: 0.1.1 | path: generate_box_files.py
 ├── pre_train_data.py     # version: 0.3.0 | path: pre_train_data.py
@@ -176,6 +176,8 @@ pyyaml
   - List and delete ROI functionality.
 - **Modularization**:
   - Screen capture separated into `capture_utils.py`.
+  - `capture_screen` now falls back to standard screenshot methods if
+    `PrintWindow` fails, logging which method succeeded.
   - ROI capture and validation logic moved to `roi_capture.py`.
 - **Data Recording & Pretraining**:
 - `data_recorder.py` logs frame screenshots, observations and semantic actions.

@@ -1,5 +1,5 @@
 # BAgent
-# version: 0.3.5
+# version: 0.3.6
 # path: README.md
 
 
@@ -33,7 +33,9 @@ or that `src/` is on `PYTHONPATH`. The directory now ships with a minimal
 not support implicit namespace packages.
 
 `Ui.capture` now always captures the full window and crops to the active
-region if one is loaded.
+region if one is loaded. Screen capture falls back to `pyautogui` or
+`ImageGrab` if `PrintWindow` fails, with a log entry describing the
+method used.
 
 Run tests with:
 
