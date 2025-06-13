@@ -1,4 +1,4 @@
-# version: 0.4.7
+# version: 0.4.9
 # path: data_recorder.py
 
 import pickle
@@ -72,7 +72,7 @@ def _wait_for_event(env, stop_event=None):
         done.wait()
     ml.stop()
     kl.stop()
-    return result['data']
+    return result.get('data')
 
 
 def record_data(filename='demo_buffer.pkl', num_samples=500, manual=True,

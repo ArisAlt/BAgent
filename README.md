@@ -1,5 +1,5 @@
 # BAgent
-# version: 0.3.5
+# version: 0.3.7
 # path: README.md
 
 
@@ -33,7 +33,9 @@ or that `src/` is on `PYTHONPATH`. The directory now ships with a minimal
 not support implicit namespace packages.
 
 `Ui.capture` now always captures the full window and crops to the active
-region if one is loaded.
+region if one is loaded. Screen capture falls back to `pyautogui` or
+`ImageGrab` if `PrintWindow` fails, with a log entry describing the
+method used.
 
 Run tests with:
 
@@ -149,6 +151,8 @@ pickled buffer so training from `demo_buffer.pkl` matches the JSONL log.
 Frame captures are now validated. If `env.ui.capture()` returns `None`,
 the step is skipped and a warning is logged. After five consecutive
 failures recording aborts to prevent empty data.
+Press **End** to stop manual recording; a KeyError when ending without
+an action has been fixed.
 
 
 ### Using `run_start.py`

@@ -1,4 +1,4 @@
-# version: 0.8.3
+# version: 0.8.5
 # path: src/capture_utils.py
 
 import cv2
@@ -39,7 +39,9 @@ def get_window_rect(title: str):
 def capture_screen(select_region=False, window_title=None):
     """
     Capture a window using PrintWindow (safest GDI method for layered content).
-    Works best when EVE is not fullscreen-exclusive.
+    Falls back to `pyautogui.screenshot()` or Pillow's `ImageGrab.grab()` if
+    PrintWindow fails or returns a white image. Works best when EVE is not
+    fullscreen-exclusive.
     """
     global _first_foreground
 
@@ -95,15 +97,24 @@ def capture_screen(select_region=False, window_title=None):
     bmp.CreateCompatibleBitmap(mfc_dc, width, height)
     save_dc.SelectObject(bmp)
 
-    # Try PrintWindow
-    result = ctypes.windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), 0)
-    if result != 1:
-        logger.warning("[Capture] PrintWindow failed. Screen may be black.")
-        return None
+    img_bgr = None
+    used_method = "PrintWindow"
 
-    bmp_info = bmp.GetInfo()
-    bmp_str = bmp.GetBitmapBits(True)
-    img = np.frombuffer(bmp_str, dtype="uint8").reshape((height, width, 4))
+    try:
+        result = ctypes.windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), 0)
+    except Exception as e:
+        logger.warning(f"[Capture] PrintWindow error: {e}")
+        result = 0
+
+    if result == 1:
+        bmp_str = bmp.GetBitmapBits(True)
+        img = np.frombuffer(bmp_str, dtype="uint8").reshape((height, width, 4))
+        img_bgr = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+        if np.mean(img_bgr) > 250:
+            logger.warning("[Capture] PrintWindow returned white image.")
+            img_bgr = None
+    else:
+        logger.warning("[Capture] PrintWindow failed.")
 
     # Cleanup
     win32gui.DeleteObject(bmp.GetHandle())
@@ -111,7 +122,24 @@ def capture_screen(select_region=False, window_title=None):
     mfc_dc.DeleteDC()
     win32gui.ReleaseDC(hwnd, hwnd_dc)
 
-    img_bgr = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+    if img_bgr is None:
+        try:
+            import pyautogui
+            screenshot = pyautogui.screenshot(region=(left, top, width, height))
+            img_bgr = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
+            used_method = "pyautogui"
+        except Exception as e:
+            logger.warning(f"[Capture] pyautogui.screenshot failed: {e}")
+            try:
+                from PIL import ImageGrab
+                screenshot = ImageGrab.grab(bbox=(left, top, right, bottom))
+                img_bgr = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
+                used_method = "ImageGrab"
+            except Exception as e:
+                logger.error(f"[Capture] ImageGrab failed: {e}")
+                return None
+
+    logger.info(f"[Capture] captured via {used_method}")
 
     if select_region:
         roi = cv2.selectROI(
