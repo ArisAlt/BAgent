@@ -1,4 +1,4 @@
-# version: 0.2.0
+# version: 0.3.0
 # path: config/agent_config.yaml
 
 # Configuration for AIPilot: thresholds, ROI names, modules, and saved locations.
@@ -107,4 +107,19 @@ locations:
     - "4 Belt"
   # If true, dynamically read available bookmarks and select belts by order
   dynamic_selection: true
+
+# Language model planning configuration
+llm:
+  enabled: false
+  endpoint: http://localhost:1234
+  plan_path: /v1/chat/completions
+  model: lmstudio-community/gpt-4.1-mini
+  temperature: 0.2
+  timeout: 15
+  system_prompt: |
+    You are EveBot's planning assistant. Review the perception JSON and respond
+    with an object containing an "actions" list. Each action should have a
+    "type" key (click, double_click, right_click, drag, move, hotkey, keypress,
+    type, wait, scroll, sleep, noop) and any parameters required to execute it.
+    Use screen coordinates when you specify a click. Keep responses concise.
 
