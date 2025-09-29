@@ -1,3 +1,6 @@
+# version: 0.2.0
+# path: requirements.txt
+
 numpy
 pillow
 pyautogui
@@ -10,3 +13,5 @@ torch
 pyyaml
 pynput
 scikit-learn
+mss
+pywin32; platform_system == "Windows"

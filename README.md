@@ -1,5 +1,5 @@
 # BAgent
-# version: 0.3.6
+# version: 0.3.7
 # path: README.md
 
 
@@ -33,9 +33,11 @@ or that `src/` is on `PYTHONPATH`. The directory now ships with a minimal
 not support implicit namespace packages.
 
 `Ui.capture` now always captures the full window and crops to the active
-region if one is loaded. Screen capture falls back to `pyautogui` or
-`ImageGrab` if `PrintWindow` fails, with a log entry describing the
-method used.
+region if one is loaded. Screen capture first attempts an `mss` grab of the
+target window bounds before falling back to the `PrintWindow` GDI path and,
+if required, `pyautogui` or `ImageGrab`. Logs continue to note which
+strategy succeeded. Installing requirements now pulls in the additional `mss`
+dependency (and `pywin32` for Windows fallbacks).
 
 Run tests with:
 

@@ -1,12 +1,13 @@
 # EVE Online Bot Project Scaffold
-
+# version: 0.4.1
+# path: Scaffold.md
 
 ---
 
 ## Directory Structure
 ```
 BAgent/
-├── README.md           # version: 0.3.6 | path: README.md
+├── README.md           # version: 0.3.7 | path: README.md
 ├── src/
 │   ├── __init__.py       # version: 0.1.0 | path: src/__init__.py
 │   ├── bot_core.py       # version: 0.6.2 | path: src/bot_core.py
@@ -15,7 +16,7 @@ BAgent/
 │   ├── ocr.py            # version: 0.3.7 | path: src/ocr.py
 │   ├── cv.py             # version: 0.3.5 | path: src/cv.py
 │   ├── ui.py             # version: 0.4.2 | path: src/ui.py
-│   ├── capture_utils.py  # version: 0.8.4 | path: src/capture_utils.py
+│   ├── capture_utils.py  # version: 0.8.5 | path: src/capture_utils.py
 │   ├── logger.py         # version: 0.1.0 | path: src/logger.py
 │   ├── roi_capture.py    # version: 0.2.5 | path: src/roi_capture.py
 │   ├── mining_actions.py # version: 0.1.2 | path: src/mining_actions.py
@@ -41,7 +42,7 @@ BAgent/
 ├── ets.txt               # sample training commands
 ├── promts.txt            # project prompts and notes
 ├── regions.yaml          # saved ROI definitions
-├── requirements.txt      # Python dependencies
+├── requirements.txt      # version: 0.2.0 | path: requirements.txt
 ├── test_env.py           # version: 0.1.1 | path: test_env.py
 ├── tests/                # test suite
 │   ├── test_capture_utils.py      # version: 0.1.0 | path: tests/test_capture_utils.py
@@ -57,10 +58,12 @@ BAgent/
 
 ## Recent Changes Summary
 
-- **Modularization & Tooling:**  
-  - Screen capture (`capture_utils.py`), ROI capture (`roi_capture.py`), GUI in `bot_core.py`.  
+- **Modularization & Tooling:**
+  - Screen capture (`capture_utils.py`) now prioritizes `mss` window grabs before
+    falling back to `PrintWindow`, `pyautogui`, or `ImageGrab`, with logs noting the
+    chosen method. ROI capture (`roi_capture.py`), GUI in `bot_core.py`.
   - Dynamic ROI types (click/text/detect) and auto-generated action space in `env.py`.  
-- **Environment Enhancements:**  
+- **Environment Enhancements:**
   - Dynamic ROI loading, text & detection regions, cargo capacity parsing.  
   - Expanded action set from EVE-Master internal nodes.  
 - **Data & Training Pipeline:**
@@ -68,7 +71,8 @@ BAgent/
     stopped with the **End** key.
   - Optional `--window-title` selects the EVE window (default is read from `src/config/pilot_name.txt`).
   - Tools for dataset generation and preprocessing.
-  - CLI entry via `run_start.py` and PySide6 GUI support.
+  - CLI entry via `run_start.py` and PySide6 GUI support. Project dependencies now
+    include `mss` (and `pywin32` for Windows capture fallbacks) via `requirements.txt`.
   - `agent.py` provides BC training (`train_bc_from_data`) and inference (`load_and_predict`).
   - `bot_core.py` can run BC models via `--mode bc_inference`.
   - `replay_session.py` visualizes demonstrations and outputs accuracy and confusion metrics.

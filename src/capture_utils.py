@@ -1,15 +1,19 @@
-# version: 0.8.4
+# version: 0.8.5
 # path: src/capture_utils.py
 
 import cv2
 import numpy as np
 import ctypes
+import logging
 from ctypes.wintypes import RECT
 
 try:
     from .logger import get_logger  # package import
 except ImportError:  # pragma: no cover - fallback for direct execution
     from logger import get_logger
+
+import mss
+from mss import tools as mss_tools
 
 try:
     import win32gui
@@ -38,10 +42,11 @@ def get_window_rect(title: str):
 
 def capture_screen(select_region=False, window_title=None):
     """
-    Capture a window using PrintWindow (safest GDI method for layered content).
-    Falls back to `pyautogui.screenshot()` or Pillow's `ImageGrab.grab()` if
-    PrintWindow fails or returns a white image. Works best when EVE is not
-    fullscreen-exclusive.
+    Capture a window by preferring an `mss` grab of the target bounds before
+    falling back to `PrintWindow` (the safest GDI method for layered content).
+    If those paths fail or return a blank frame, the function attempts
+    `pyautogui.screenshot()` and finally Pillow's `ImageGrab.grab()`. Works
+    best when EVE is not fullscreen-exclusive.
     """
     global _first_foreground
 
@@ -90,37 +95,68 @@ def capture_screen(select_region=False, window_title=None):
             logger.warning(f"[Capture] Could not bring to foreground: {e}")
         _first_foreground = False
 
-    hwnd_dc = win32gui.GetWindowDC(hwnd)
-    mfc_dc = win32ui.CreateDCFromHandle(hwnd_dc)
-    save_dc = mfc_dc.CreateCompatibleDC()
-    bmp = win32ui.CreateBitmap()
-    bmp.CreateCompatibleBitmap(mfc_dc, width, height)
-    save_dc.SelectObject(bmp)
-
     img_bgr = None
-    used_method = "PrintWindow"
+    used_method = None
 
+    # --- Primary path: use mss to capture the window bounds ---
     try:
-        result = ctypes.windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), 0)
+        with mss.mss() as sct:
+            monitor = {"top": top, "left": left, "width": width, "height": height}
+            sct_img = sct.grab(monitor)
+            if sct_img.width > 0 and sct_img.height > 0:
+                img_bgra = np.array(sct_img, dtype=np.uint8)
+                if img_bgra.size:
+                    img_bgr = cv2.cvtColor(img_bgra, cv2.COLOR_BGRA2BGR)
+                    used_method = "mss"
+                    if logger.isEnabledFor(logging.DEBUG):
+                        png_bytes = mss_tools.to_png(
+                            sct_img.rgb, (sct_img.width, sct_img.height), output=None
+                        )
+                        logger.debug(
+                            "[Capture] mss grab size %sx%s, png bytes=%s",
+                            sct_img.width,
+                            sct_img.height,
+                            len(png_bytes),
+                        )
+                    if np.mean(img_bgr) > 250:
+                        logger.warning("[Capture] mss grab returned white image.")
+                        img_bgr = None
+                        used_method = None
     except Exception as e:
-        logger.warning(f"[Capture] PrintWindow error: {e}")
-        result = 0
+        logger.warning(f"[Capture] mss grab failed: {e}")
 
-    if result == 1:
-        bmp_str = bmp.GetBitmapBits(True)
-        img = np.frombuffer(bmp_str, dtype="uint8").reshape((height, width, 4))
-        img_bgr = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
-        if np.mean(img_bgr) > 250:
-            logger.warning("[Capture] PrintWindow returned white image.")
-            img_bgr = None
-    else:
-        logger.warning("[Capture] PrintWindow failed.")
+    # --- Fallback: PrintWindow for layered content ---
+    if img_bgr is None:
+        hwnd_dc = win32gui.GetWindowDC(hwnd)
+        mfc_dc = win32ui.CreateDCFromHandle(hwnd_dc)
+        save_dc = mfc_dc.CreateCompatibleDC()
+        bmp = win32ui.CreateBitmap()
+        bmp.CreateCompatibleBitmap(mfc_dc, width, height)
+        save_dc.SelectObject(bmp)
 
-    # Cleanup
-    win32gui.DeleteObject(bmp.GetHandle())
-    save_dc.DeleteDC()
-    mfc_dc.DeleteDC()
-    win32gui.ReleaseDC(hwnd, hwnd_dc)
+        used_method = "PrintWindow"
+
+        try:
+            result = ctypes.windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), 0)
+        except Exception as e:
+            logger.warning(f"[Capture] PrintWindow error: {e}")
+            result = 0
+
+        if result == 1:
+            bmp_str = bmp.GetBitmapBits(True)
+            img = np.frombuffer(bmp_str, dtype="uint8").reshape((height, width, 4))
+            img_bgr = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+            if np.mean(img_bgr) > 250:
+                logger.warning("[Capture] PrintWindow returned white image.")
+                img_bgr = None
+        else:
+            logger.warning("[Capture] PrintWindow failed.")
+
+        # Cleanup
+        win32gui.DeleteObject(bmp.GetHandle())
+        save_dc.DeleteDC()
+        mfc_dc.DeleteDC()
+        win32gui.ReleaseDC(hwnd, hwnd_dc)
 
     if img_bgr is None:
         try:
