@@ -1,5 +1,5 @@
 # BAgent
-# version: 0.4.0
+# version: 0.5.0
 # path: README.md
 
 
@@ -37,7 +37,8 @@ region if one is loaded. Screen capture first attempts an `mss` grab of the
 target window bounds before falling back to the `PrintWindow` GDI path and,
 if required, `pyautogui` or `ImageGrab`. Logs continue to note which
 strategy succeeded. Installing requirements now pulls in the additional `mss`
-dependency (and `pywin32` for Windows fallbacks).
+dependency (and `pywin32` for Windows fallbacks). The `requests` library is
+also bundled for the LM Studio planning client.
 
 Run tests with:
 
@@ -98,6 +99,47 @@ Launch reinforcement learning or inference using `run_start.py`:
 python run_start.py --train --bc_model bc_model.pt --timesteps 50000
 ```
 
+## LLM Planning Mode
+
+EveBot can delegate planning to a local LM Studio instance. When LLM planning
+is enabled the bot gathers the current observation vector, OCR text snippet,
+and the most recent YOLO detections and posts the structured payload to
+`src/llm_client.py`. The LM Studio endpoint (default
+`http://localhost:1234/v1/chat/completions`) is configurable in
+`src/config/agent_config.yaml` under the `llm` section. The response must be a
+JSON object with an `actions` list; each entry is forwarded to
+`Ui.execute`, which now understands clicks by coordinate or ROI, hotkeys,
+typing, drags, scrolls, sleeps, and nested `sequence` groups.
+
+1. Start LM Studio with a chat-completion model and enable streaming or JSON
+   replies.
+2. Enable planning via `llm.enabled: true` in the config or pass
+   `--llm-planning` when running `python -m src.bot_core`. Use
+   `--no-llm-planning` to force the heuristic fallback.
+3. Adjust `endpoint`, `plan_path`, `model`, `temperature`, `timeout`, or the
+   `system_prompt` in the same config block to match your setup.
+4. Launch the GUI. The footer displays whether LLM planning is active and the
+   log records the high-level actions (`click`, `hotkey`, etc.) returned by the
+   model. If the server cannot be reached, EveBot automatically falls back to
+   the existing mining routine.
+
+Example response expected from LM Studio:
+
+```json
+{
+  "actions": [
+    {"type": "click", "x": 1250, "y": 740},
+    {"type": "wait", "duration": 0.5},
+    {"type": "hotkey", "keys": ["CTRL", "F"], "interval": 0.05},
+    {"type": "type", "text": "Veldspar"},
+    {"type": "sleep", "duration": 1.0}
+  ]
+}
+```
+
+Commands that the parser cannot interpret are ignored, and the heuristics take
+over for that tick.
+
 ### Debug Logging
 
 Set the environment variable `LOG_LEVEL` or pass `--log-level` to `run_start.py`
@@ -121,7 +163,7 @@ Each Python source file begins with comments specifying its `version` and
 entries in `Scaffold.md`.
 ## Human-in-the-loop Modes
 
-During runtime press **F9** for Auto, **F10** for Manual, and **F11** for Assistive mode. In Assistive mode press **F12** to execute the suggested action.
+During runtime press **F9** for Auto, **F10** for Manual, and **F11** for Assistive mode. In Assistive mode press **F12** to execute the suggested action. Pass `--llm-planning` or `--no-llm-planning` on the `python -m src.bot_core` command line to override the configuration toggle for LM Studio plans.
 
 ## Behavior Cloning Pretraining
 

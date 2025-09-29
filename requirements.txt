@@ -1,4 +1,4 @@
-# version: 0.3.0
+# version: 0.3.1
 # path: requirements.txt
 
 numpy
@@ -16,3 +16,4 @@ pynput
 scikit-learn
 mss
 pywin32; platform_system == "Windows"
+requests

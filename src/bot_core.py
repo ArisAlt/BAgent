@@ -1,17 +1,20 @@
-# version: 0.6.2
+# version: 0.7.0
 # path: src/bot_core.py
+
+from __future__ import annotations
 
 import sys
 import time
 import argparse
 import re
-import pyautogui
-import cv2
-from PySide6 import QtWidgets, QtCore, QtGui
+from typing import Any, Dict, List, Optional
+
+from PySide6 import QtWidgets, QtGui
 from .logger import get_logger
 
 logger = get_logger(__name__)
 
+from . import capture_utils
 from .roi_capture import RegionHandler
 from .ocr import OcrEngine
 from .cv import CvEngine
@@ -20,10 +23,16 @@ from .mining_actions import MiningActions
 from .env import EveEnv
 from .agent import AIPilot
 from .ui import Ui
+from .llm_client import LMStudioClient
 
 
 class EveBot:
-    def __init__(self, model_path=None):
+    def __init__(
+        self,
+        model_path: Optional[str] = None,
+        llm_enabled: Optional[bool] = None,
+        llm_client: Optional[LMStudioClient] = None,
+    ):
         # Initialize environment, agent, UI, and FSM
         self.env = EveEnv()
         self.fsm = FSM()
@@ -42,6 +51,45 @@ class EveBot:
 
         self.mode = "auto"
         self.pending_action = None
+        self.llm_config: Dict[str, Any] = dict(self.agent.config.get("llm", {}) or {})
+        config_enabled = bool(self.llm_config.get("enabled", False))
+        self.llm_planning_enabled = config_enabled if llm_enabled is None else bool(llm_enabled)
+        self.llm_client: Optional[LMStudioClient] = llm_client or (
+            self._build_llm_client() if self.llm_planning_enabled else None
+        )
+        self.last_llm_failure = 0.0
+        self.last_plan: Optional[List[Dict[str, Any]]] = None
+        self.llm_status_callback = None
+
+    def _build_llm_client(self) -> Optional[LMStudioClient]:
+        if not self.llm_config:
+            return None
+        base_url = str(self.llm_config.get("endpoint", "") or "").strip()
+        plan_path = str(self.llm_config.get("plan_path", "/v1/chat/completions") or "/v1/chat/completions")
+        model = str(self.llm_config.get("model", "lmstudio") or "lmstudio")
+        temperature = self.llm_config.get("temperature", 0.2)
+        try:
+            temperature = float(temperature)
+        except (TypeError, ValueError):
+            temperature = 0.2
+        timeout = self.llm_config.get("timeout", 10.0)
+        try:
+            timeout = float(timeout)
+        except (TypeError, ValueError):
+            timeout = 10.0
+        system_prompt = self.llm_config.get("system_prompt")
+        try:
+            return LMStudioClient(
+                base_url=base_url or "http://localhost:1234",
+                plan_path=plan_path,
+                model=model,
+                temperature=temperature,
+                timeout=timeout,
+                system_prompt=system_prompt,
+            )
+        except Exception as exc:  # pragma: no cover - defensive guard
+            logger.warning("Failed to initialise LM Studio client: %s", exc)
+            return None
 
     def log(self, message, level="info"):
         getattr(logger, level, logger.info)(message)
@@ -49,10 +97,124 @@ class EveBot:
         if self.gui_logger:
             self.gui_logger.append(timestamped)
 
+    def set_mode(self, mode: str) -> None:
+        if mode not in {"auto", "manual", "assist"}:
+            logger.warning("Unknown mode '%s'", mode)
+            return
+        self.mode = mode
+        self.log(f"Mode switched to {mode}")
+
+    def set_llm_planning(self, enabled: bool) -> None:
+        if bool(enabled) == self.llm_planning_enabled:
+            return
+        self.llm_planning_enabled = bool(enabled)
+        if self.llm_planning_enabled and self.llm_client is None:
+            self.llm_client = self._build_llm_client()
+        state = "enabled" if self.llm_planning_enabled else "disabled"
+        self.log(f"LLM planning {state}.")
+        if self.llm_status_callback:
+            try:
+                self.llm_status_callback(self.llm_planning_enabled)
+            except Exception as exc:  # pragma: no cover - UI guard
+                logger.debug("LLM status callback failed: %s", exc)
+
+    def _format_detection(self, detection: Dict[str, Any]) -> Dict[str, Any]:
+        bbox = detection.get("bbox")
+        if isinstance(bbox, (list, tuple)):
+            try:
+                bbox_list = [float(v) for v in bbox]
+            except (TypeError, ValueError):
+                bbox_list = list(bbox)
+        else:
+            bbox_list = None
+        conf = detection.get("confidence")
+        try:
+            confidence = float(conf) if conf is not None else None
+        except (TypeError, ValueError):
+            confidence = None
+        return {
+            "roi": detection.get("roi"),
+            "label": detection.get("name"),
+            "confidence": confidence,
+            "bbox": bbox_list,
+            "class_id": detection.get("class_id"),
+        }
+
+    def _gather_perception(self, screen) -> Dict[str, Any]:
+        observation = self.env.get_observation()
+        ocr_excerpt = ""
+        if screen is not None:
+            try:
+                ocr_excerpt = self.ocr.extract_text(screen)
+            except Exception as exc:  # pragma: no cover - OCR fallback
+                logger.debug("OCR extraction failed: %s", exc)
+        try:
+            templates = self.env._load_templates()
+        except Exception as exc:  # pragma: no cover - defensive guard
+            logger.debug("Template loading failed: %s", exc)
+            templates = None
+        detections: List[Dict[str, Any]] = []
+        if templates and screen is not None:
+            try:
+                detections = self.cv.detect_elements(
+                    screen,
+                    templates,
+                    threshold=self.env._detector_threshold(),
+                )
+            except Exception as exc:  # pragma: no cover - detector guard
+                logger.debug("Detection failed: %s", exc)
+                detections = []
+        formatted = [self._format_detection(det) for det in detections][:10]
+        return {
+            "timestamp": time.time(),
+            "mode": self.mode,
+            "state": self.fsm.state.name if self.fsm else None,
+            "observation": observation,
+            "ocr_excerpt": ocr_excerpt[:500],
+            "detections": formatted,
+        }
+
+    def _execute_plan(self, plan: List[Dict[str, Any]]) -> None:
+        for raw_action in plan:
+            action = raw_action
+            if not isinstance(action, dict):
+                action = {"type": action}
+            action_type = str(action.get("type", "")).lower()
+            if action_type in {"comment", "message", "note"}:
+                text = action.get("text") or action.get("message") or action.get("content")
+                if text:
+                    self.log(f"💬 LLM: {text}")
+                continue
+            if action_type == "noop":
+                continue
+            self.ui.execute(action)
+            post_delay = action.get("sleep_after") or action.get("delay_after")
+            if post_delay is not None:
+                try:
+                    delay = float(post_delay)
+                except (TypeError, ValueError):
+                    delay = 0.0
+                if delay > 0:
+                    time.sleep(delay)
+
+    def _summarise_plan(self, plan: List[Dict[str, Any]]) -> str:
+        labels: List[str] = []
+        for action in plan:
+            if isinstance(action, dict):
+                labels.append(str(action.get("type", "noop")))
+            else:
+                labels.append(str(action))
+            if len(labels) >= 5:
+                break
+        if len(plan) > 5:
+            labels.append("…")
+        return ", ".join(labels)
+
     def start(self):
         self.running = True
         self.fsm.on_event(Event.START_MINING)
-        self.log(f"▶️ Bot started. State: {self.fsm.state.name}")
+        llm_state = "enabled" if self.llm_planning_enabled and self.llm_client else "disabled"
+        self.log(f"▶️ Bot started. State: {self.fsm.state.name} (LLM {llm_state})")
         self._main_loop()
 
     def stop(self):
@@ -74,8 +236,6 @@ class EveBot:
             self.pending_action = None
 
     def _main_loop(self):
-        import capture_utils
-
         while self.running:
             if self.mode == "manual":
                 time.sleep(0.1)
@@ -87,9 +247,36 @@ class EveBot:
                     self.log(f"Suggested action {self.pending_action}")
                 time.sleep(0.1)
                 continue
+
             screen = capture_utils.capture_screen(select_region=False)
-            if self.fsm.state.name == "MINING":
+            executed_plan = False
+            if self.llm_planning_enabled:
+                if self.llm_client is None:
+                    self.llm_client = self._build_llm_client()
+                if self.llm_client:
+                    perception = self._gather_perception(screen)
+                    plan = self.llm_client.plan_actions(perception)
+                    if plan:
+                        self.last_plan = plan
+                        summary = self._summarise_plan(plan)
+                        self.log(f"🤖 LLM plan: {summary}")
+                        self._execute_plan(plan)
+                        executed_plan = True
+                    else:
+                        self.last_plan = None
+                        now = time.time()
+                        if now - self.last_llm_failure > 10.0:
+                            self.log("LLM planning unavailable, using heuristic fallback.", "warning")
+                            self.last_llm_failure = now
+                else:
+                    now = time.time()
+                    if now - self.last_llm_failure > 10.0:
+                        self.log("LM Studio client not initialised; continuing without LLM.", "warning")
+                        self.last_llm_failure = now
+
+            if not executed_plan and self.fsm.state.name == "MINING":
                 self._do_mining_routine(screen)
+
             reward = self.env._compute_reward()
             if self.reward_label:
                 self.reward_label.setText(f"Reward: {reward:.2f}")
@@ -136,7 +323,7 @@ class EveBot:
                 box = self.rh.load(slot)
                 if box:
                     x1, y1, x2, y2 = box
-                    pyautogui.click((x1 + x2) // 2, (y1 + y2) // 2)
+                    self.ui.click((x1 + x2) // 2, (y1 + y2) // 2)
                     time.sleep(0.2)
             time.sleep(1.0)
             return
@@ -156,7 +343,7 @@ class EveBot:
             box = self.rh.load("overview_distance_header")
             if box:
                 x1, y1, x2, y2 = box
-                pyautogui.click((x1 + x2) // 2, (y1 + y2) // 2)
+                self.ui.click((x1 + x2) // 2, (y1 + y2) // 2)
                 self.log("↕️ Sorting overview by distance")
                 time.sleep(0.5)
 
@@ -167,7 +354,7 @@ class EveBot:
                 box = self.rh.load("overview_panel")
                 if box:
                     x1, y1, x2, y2 = box
-                    pyautogui.click(x1 + 40, y1 + 15)
+                    self.ui.click(x1 + 40, y1 + 15, jitter=2)
                     self.log("🪨 Selected nearest asteroid")
                     time.sleep(0.5)
 
@@ -176,7 +363,7 @@ class EveBot:
 
 
 class BotGui(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, llm_enabled: Optional[bool] = None):
         super().__init__()
         if hasattr(self, "setWindowTitle"):
             self.setWindowTitle("EVE Bot Controller")
@@ -228,10 +415,10 @@ class BotGui(QtWidgets.QWidget):
                 activated=lambda: self._switch_mode("assist"),
             )
             QtWidgets.QShortcut(
-                QtGui.QKeySequence("F12"), self, activated=self.bot.confirm_suggestion
+                QtGui.QKeySequence("F12"), self, activated=self._confirm_pending
             )
 
-        self.bot = EveBot(model_path=None)
+        self.bot = EveBot(model_path=None, llm_enabled=llm_enabled)
         self.bot.gui_logger = self.log_area
         self.bot.reward_label = self.reward_label
 
@@ -248,10 +435,24 @@ class BotGui(QtWidgets.QWidget):
         ):
             self.override_btn.clicked.connect(self._send_manual)
 
+        self.llm_label = QtWidgets.QLabel()
+        if add:
+            add(self.llm_label)
+        self._update_llm_label(self.bot.llm_planning_enabled)
+        self.bot.llm_status_callback = self._update_llm_label
+
     def _switch_mode(self, mode):
         self.bot.set_mode(mode)
         if hasattr(self.mode_label, "setText"):
             self.mode_label.setText(f"Mode: {mode.capitalize()}")
+
+    def _update_llm_label(self, enabled: bool) -> None:
+        status = "On" if enabled else "Off"
+        if hasattr(self.llm_label, "setText"):
+            self.llm_label.setText(f"LLM planning: {status}")
+
+    def _confirm_pending(self):
+        self.bot.confirm_suggestion()
 
     def _send_manual(self):
         text = self.override_input.text()
@@ -275,11 +476,24 @@ def main():
         default=None,
         help="Path to a trained BC model for inference",
     )
+    parser.add_argument(
+        "--llm-planning",
+        dest="llm_planning",
+        action="store_true",
+        help="Enable LM Studio planning overrides",
+    )
+    parser.add_argument(
+        "--no-llm-planning",
+        dest="llm_planning",
+        action="store_false",
+        help="Disable LM Studio planning overrides",
+    )
+    parser.set_defaults(llm_planning=None)
     args = parser.parse_args()
 
     if args.mode == "gui":
         app = QtWidgets.QApplication(sys.argv)
-        window = BotGui()
+        window = BotGui(llm_enabled=args.llm_planning)
         window.show()
         sys.exit(app.exec())
 
