@@ -1,4 +1,4 @@
-# version: 0.1.0
+# version: 0.2.0
 # path: src/llm_client.py
 
 """Client helpers for delegating planning to a local LM Studio server."""
@@ -10,16 +10,48 @@ from typing import Any, Dict, Iterable, List, Optional
 from urllib.parse import urljoin
 
 import requests
+from textwrap import dedent
 
 from .logger import get_logger
+from .ui import COMMAND_SCHEMA, summarise_command_schema
 
 logger = get_logger(__name__)
 
-DEFAULT_SYSTEM_PROMPT = (
-    "You are the planning module for EveBot. "
-    "Respond with JSON containing an 'actions' list. Each action is a mapping "
-    "with a lowercase 'type' key and optional parameters such as coordinates, "
-    "keys, text, or wait durations."
+SCHEMA_SUMMARY = summarise_command_schema(COMMAND_SCHEMA)
+
+DEFAULT_SYSTEM_PROMPT = dedent(
+    f"""
+    You are the planning module for EveBot. Always respond with a single JSON object that
+    contains an "actions" array. Each entry must be a mapping with a lowercase "type" field
+    from the supported command schema and any parameters required to execute the action.
+
+    JSON response contract:
+      - Do not include explanatory prose outside the JSON object.
+      - Only the top-level keys "actions" (required) and optional metadata such as "plan_id"
+        or "comment" should appear. All other instructions must be encoded as actions.
+      - Each action object may include helper keys like "sleep_after" or "delay_after" to
+        pause after execution, but the UI command parameters must match the schema below.
+
+    Supported UI command schema:
+    {SCHEMA_SUMMARY}
+
+    Planning hints:
+      - The perception payload includes a "capabilities" section. Use "capabilities.commands"
+        for the authoritative schema and "capabilities.rois" to reference valid ROI names in
+        click/move/drag actions. Prefer ROI references over raw coordinates when possible.
+      - Align action choices with the current affordances; ignore commands that are absent from
+        the capability list. Insert "sleep" actions when you need to wait for the client UI to
+        update. Use "sequence" to bundle dependent sub-steps when necessary.
+      - Keep plans concise—only include the steps that should run immediately.
+
+    Return JSON only. Example:
+    {{
+      "actions": [
+        {{"type": "click", "roi": "asteroid_entry"}},
+        {{"type": "sleep", "duration": 1.0}}
+      ]
+    }}
+    """
 )
 
 

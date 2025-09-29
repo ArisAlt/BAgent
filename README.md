@@ -1,5 +1,5 @@
 # BAgent
-# version: 0.6.0
+# version: 0.7.0
 # path: README.md
 
 
@@ -108,12 +108,21 @@ and the most recent YOLO detections and posts the structured payload to
 summarises live mining telemetry—cargo hold percentage, which module slots are
 cycling, whether a target is locked, whether hostiles were detected on the
 current frame, and the last environment reward (all values are clipped for
-JSON safety). The LM Studio endpoint (default
-`http://localhost:1234/v1/chat/completions`) is configurable in
-`src/config/agent_config.yaml` under the `llm` section. The response must be a
-JSON object with an `actions` list; each entry is forwarded to
-`Ui.execute`, which now understands clicks by coordinate or ROI, hotkeys,
-typing, drags, scrolls, sleeps, and nested `sequence` groups.
+JSON safety). A new `capabilities` section mirrors the UI affordances so the
+planner knows which commands and ROI identifiers are valid. The LM Studio
+endpoint (default `http://localhost:1234/v1/chat/completions`) is configurable
+in `src/config/agent_config.yaml` under the `llm` section.
+
+`DEFAULT_SYSTEM_PROMPT` now inlines a concise schema harvested directly from
+`Ui.execute`, describing every supported command (click, move, drag, hotkey,
+type, scroll, sleep, switch_region, sequence, noop, etc.) and their parameters.
+The perception payload's `capabilities.commands` mirrors this schema in JSON so
+the LLM can validate its own output. Custom planners can override the prompt by
+setting `llm.system_prompt` in the config file; any override will replace the
+default while still receiving the same capability metadata. Responses must be a
+JSON object with an `actions` array—each entry is forwarded verbatim to
+`Ui.execute`, and helper fields like `sleep_after` remain supported for
+post-action pauses.
 
 1. Start LM Studio with a chat-completion model and enable streaming or JSON
    replies.

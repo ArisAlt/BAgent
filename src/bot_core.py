@@ -1,4 +1,4 @@
-# version: 0.8.0
+# version: 0.9.0
 # path: src/bot_core.py
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from .state_machine import FSM, Event
 from .mining_actions import MiningActions
 from .env import EveEnv
 from .agent import AIPilot
-from .ui import Ui
+from .ui import Ui, COMMAND_SCHEMA
 from .llm_client import LMStudioClient
 
 
@@ -280,6 +280,15 @@ class EveBot:
             },
             "reward": self._clip_numeric(self._last_reward) if self._last_reward is not None else None,
         }
+        capabilities = {
+            "commands": COMMAND_SCHEMA,
+            "rois": {
+                "click": list(getattr(self.env, "click_rois", []) or []),
+                "text": list(getattr(self.env, "text_rois", []) or []),
+                "detect": list(getattr(self.env, "detect_rois", []) or []),
+            },
+            "keys": list(getattr(self.env, "key_actions", []) or []),
+        }
         return {
             "timestamp": time.time(),
             "mode": self.mode,
@@ -288,6 +297,7 @@ class EveBot:
             "ocr_excerpt": ocr_excerpt[:500],
             "detections": formatted,
             "status": perception_status,
+            "capabilities": capabilities,
         }
 
     def _execute_plan(self, plan: List[Dict[str, Any]]) -> None:
