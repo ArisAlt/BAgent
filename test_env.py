@@ -1,5 +1,5 @@
 # test_env.py
-# version: 0.1.1
+# version: 0.2.0
 # path: test_env.py
 # Quick smoke-test for your ROI definitions and Gym wrapper
 
@@ -42,6 +42,11 @@ class DummyCvEngine:
         return []
 cv_mod.CvEngine = DummyCvEngine
 sys.modules.setdefault('cv', cv_mod)
+
+det_mod = types.ModuleType('detector')
+det_mod.load_detector_settings = lambda config_data=None: {}
+det_mod.map_roi_labels = lambda names, entries, cfg=None: {name: {"labels": []} for name in names}
+sys.modules.setdefault('detector', det_mod)
 
 ui_mod = types.ModuleType('ui')
 class DummyUi:

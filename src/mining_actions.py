@@ -1,4 +1,4 @@
-# version: 0.1.2
+# version: 0.2.0
 # path: src/mining_actions.py
 """High level mining routine utilities.
 
@@ -154,7 +154,13 @@ class MiningActions:
             return False
         x1, y1, x2, y2 = warn_box
         region = screen[y1:y2, x1:x2]
-        elements = self.cv.detect_elements(region, templates={"alert": "templates/hostile_alert.png"})
+        templates = {
+            "hostile_warning": {
+                "labels": ["hostile_alert"],
+                "template": "templates/hostile_alert.png",
+            }
+        }
+        elements = self.cv.detect_elements(region, templates=templates)
         return bool(elements)
 
     def warp_to_station(self):

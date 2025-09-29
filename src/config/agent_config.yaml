@@ -1,4 +1,4 @@
-# version: 0.1.0
+# version: 0.2.0
 # path: config/agent_config.yaml
 
 # Configuration for AIPilot: thresholds, ROI names, modules, and saved locations.
@@ -57,6 +57,41 @@ mission:
 exploration:
   scan_button_roi: scan_button
   anomaly_window_roi: anomaly_list
+
+# ONNX detector configuration
+detector:
+  model_path: models/yolov8n.onnx
+  providers:
+    - CPUExecutionProvider
+  default_threshold: 0.25
+  class_names:
+    0: background
+    1: hostile_alert
+    2: mining_laser_on
+    3: target_lock
+  roi_map:
+    hostile_warning:
+      labels:
+        - hostile_alert
+      template: templates/hostile_alert.png
+    module_slot1:
+      labels:
+        - mining_laser_on
+    module_slot2:
+      labels:
+        - mining_laser_on
+    module_slot3:
+      labels:
+        - mining_laser_on
+    is_target_locked:
+      labels:
+        - target_lock
+      template: templates/is_target_locked.png
+  reward_labels:
+    mine_active:
+      - mining_laser_on
+    hostile_penalty:
+      - hostile_alert
 
 # Location bookmarks for docking and mining
 locations:

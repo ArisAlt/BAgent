@@ -1,5 +1,5 @@
 # BAgent
-# version: 0.3.7
+# version: 0.4.0
 # path: README.md
 
 
@@ -44,6 +44,27 @@ Run tests with:
 ```bash
 pytest -q
 ```
+
+## Object Detection Pipeline
+
+Real-time UI recognition now uses a YOLOv8 ONNX model executed through
+`onnxruntime`. The helper in `src/detector.py` loads the network once and
+serves detections to `CvEngine`. To enable the detector:
+
+1. Download a YOLOv8 ONNX checkpoint (e.g., `yolov8n.onnx`) from the
+   [Ultralytics releases](https://github.com/ultralytics/ultralytics/releases)
+   and place it at `models/yolov8n.onnx` (or update the path in
+   `src/config/agent_config.yaml` under the `detector.model_path` setting).
+2. Install the updated requirements (which now include `onnxruntime`).
+3. Annotate `detect`-type ROIs with detector class labels in
+   `src/regions.yaml` or override them via the `detector.roi_map`
+   configuration. Each class ID must be mapped to a semantic label in the
+   `detector.class_names` section.
+
+`EveEnv` queries the detector for each ROI and consumes bounding boxes and
+confidence scores instead of template scales. Reward shaping now leverages
+the configured detector labels (`detector.reward_labels`) so you can tune
+which detections correspond to mining activity, hostiles, and other events.
 
 ## Quick Start
 
