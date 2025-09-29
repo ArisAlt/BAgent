@@ -1,5 +1,5 @@
 # BAgent
-# version: 0.5.0
+# version: 0.6.0
 # path: README.md
 
 
@@ -104,7 +104,11 @@ python run_start.py --train --bc_model bc_model.pt --timesteps 50000
 EveBot can delegate planning to a local LM Studio instance. When LLM planning
 is enabled the bot gathers the current observation vector, OCR text snippet,
 and the most recent YOLO detections and posts the structured payload to
-`src/llm_client.py`. The LM Studio endpoint (default
+`src/llm_client.py`. The perception blob now includes a `status` section that
+summarises live mining telemetry—cargo hold percentage, which module slots are
+cycling, whether a target is locked, whether hostiles were detected on the
+current frame, and the last environment reward (all values are clipped for
+JSON safety). The LM Studio endpoint (default
 `http://localhost:1234/v1/chat/completions`) is configurable in
 `src/config/agent_config.yaml` under the `llm` section. The response must be a
 JSON object with an `actions` list; each entry is forwarded to

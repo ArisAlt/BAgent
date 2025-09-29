@@ -1,5 +1,5 @@
 # EVE Online Bot Project Scaffold
-# version: 0.6.0
+# version: 0.7.0
 # path: Scaffold.md
 
 ---
@@ -7,10 +7,10 @@
 ## Directory Structure
 ```
 BAgent/
-├── README.md           # version: 0.5.0 | path: README.md
+├── README.md           # version: 0.6.0 | path: README.md
 ├── src/
 │   ├── __init__.py       # version: 0.1.0 | path: src/__init__.py
-│   ├── bot_core.py       # version: 0.7.0 | path: src/bot_core.py
+│   ├── bot_core.py       # version: 0.8.0 | path: src/bot_core.py
 │   ├── env.py            # version: 0.5.0 | path: src/env.py
 │   ├── agent.py          # version: 0.5.2 | path: src/agent.py
 │   ├── ocr.py            # version: 0.3.7 | path: src/ocr.py
@@ -78,8 +78,9 @@ BAgent/
   - Template matching remains available as a fallback when the ONNX model is
     missing.
 - **LLM Planning:**
-  - `src/llm_client.py` posts perception snapshots (observations, OCR, YOLO detections)
-    to a local LM Studio server and parses JSON action plans.
+  - `src/llm_client.py` posts perception snapshots (observations, OCR, YOLO detections,
+    and a structured status block with cargo %, module activity, hostiles, target lock,
+    and recent rewards) to a local LM Studio server and parses JSON action plans.
   - `EveBot` can execute LLM-provided actions via the GUI (`--llm-planning` CLI
     flag or the `llm.enabled` configuration) and falls back to the mining
     routine if the request fails.

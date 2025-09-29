@@ -1,4 +1,4 @@
-# version: 0.7.0
+# version: 0.8.0
 # path: src/bot_core.py
 
 from __future__ import annotations
@@ -7,6 +7,7 @@ import sys
 import time
 import argparse
 import re
+import math
 from typing import Any, Dict, List, Optional
 
 from PySide6 import QtWidgets, QtGui
@@ -60,6 +61,7 @@ class EveBot:
         self.last_llm_failure = 0.0
         self.last_plan: Optional[List[Dict[str, Any]]] = None
         self.llm_status_callback = None
+        self._last_reward: Optional[float] = None
 
     def _build_llm_client(self) -> Optional[LMStudioClient]:
         if not self.llm_config:
@@ -140,6 +142,91 @@ class EveBot:
             "class_id": detection.get("class_id"),
         }
 
+    def _clip_numeric(
+        self, value: Optional[Any], minimum: Optional[float] = -1e6, maximum: Optional[float] = 1e6
+    ) -> Optional[float]:
+        if value is None:
+            return None
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return None
+        if math.isnan(numeric) or math.isinf(numeric):
+            return None
+        if minimum is not None:
+            numeric = max(numeric, float(minimum))
+        if maximum is not None:
+            numeric = min(numeric, float(maximum))
+        if isinstance(value, int):
+            return int(round(numeric))
+        return numeric
+
+    def _scan_hostiles(self, screen) -> Optional[bool]:
+        if screen is None:
+            return None
+        try:
+            return bool(self.mining.detect_hostiles(screen))
+        except Exception as exc:  # pragma: no cover - defensive guard
+            logger.debug("Hostile scan failed: %s", exc)
+            return None
+
+    def _scan_cargo_status(self, screen) -> Optional[int]:
+        if screen is None:
+            return None
+        cargo_box = self.rh.load("mining_cargo_hold_capacity")
+        if not cargo_box:
+            return None
+        x1, y1, x2, y2 = cargo_box
+        crop = screen[y1:y2, x1:x2]
+        try:
+            text = self.ocr.extract_text(crop)
+        except Exception as exc:  # pragma: no cover - OCR guard
+            logger.debug("Cargo OCR failed: %s", exc)
+            return None
+        match = re.search(r"(\d+)", text)
+        if not match:
+            return None
+        try:
+            return int(match.group(1))
+        except (TypeError, ValueError):
+            return None
+
+    def _scan_module_activity(self, screen) -> Optional[Dict[str, Any]]:
+        if screen is None:
+            return None
+        slots = ["module_slot1", "module_slot2", "module_slot3"]
+        slot_states: Dict[str, Dict[str, Any]] = {}
+        any_active = False
+        for slot in slots:
+            box = self.rh.load(slot)
+            if not box:
+                continue
+            x1, y1, x2, y2 = box
+            try:
+                active = bool(self.cv.is_module_active(screen[y1:y2, x1:x2]))
+            except Exception as exc:  # pragma: no cover - vision guard
+                logger.debug("Module scan failed for %s: %s", slot, exc)
+                active = None
+            slot_states[slot] = {"active": active, "box": box}
+            if active:
+                any_active = True
+        if not slot_states:
+            return None
+        return {"any_active": any_active, "slots": slot_states}
+
+    def _scan_target_status(self, screen) -> Optional[bool]:
+        if screen is None:
+            return None
+        box = self.rh.load("is_target_locked")
+        if not box:
+            return None
+        x1, y1, x2, y2 = box
+        try:
+            return bool(self.cv.detect_target_lock(screen[y1:y2, x1:x2]))
+        except Exception as exc:  # pragma: no cover - vision guard
+            logger.debug("Target lock scan failed: %s", exc)
+            return None
+
     def _gather_perception(self, screen) -> Dict[str, Any]:
         observation = self.env.get_observation()
         ocr_excerpt = ""
@@ -165,6 +252,34 @@ class EveBot:
                 logger.debug("Detection failed: %s", exc)
                 detections = []
         formatted = [self._format_detection(det) for det in detections][:10]
+        cargo_pct = self._scan_cargo_status(screen) if screen is not None else None
+        module_activity = self._scan_module_activity(screen) if screen is not None else None
+        target_locked = self._scan_target_status(screen) if screen is not None else None
+        hostiles_present = self._scan_hostiles(screen) if screen is not None else None
+        status_modules = None
+        if module_activity:
+            status_modules = {
+                "any_active": bool(module_activity.get("any_active")),
+                "slots": {
+                    slot: info.get("active")
+                    for slot, info in module_activity.get("slots", {}).items()
+                },
+            }
+        perception_status = {
+            "cargo": {
+                "percent": self._clip_numeric(cargo_pct, 0.0, 100.0)
+                if cargo_pct is not None
+                else None
+            },
+            "modules": status_modules,
+            "hostiles": {
+                "present": None if hostiles_present is None else bool(hostiles_present)
+            },
+            "target": {
+                "locked": None if target_locked is None else bool(target_locked)
+            },
+            "reward": self._clip_numeric(self._last_reward) if self._last_reward is not None else None,
+        }
         return {
             "timestamp": time.time(),
             "mode": self.mode,
@@ -172,6 +287,7 @@ class EveBot:
             "observation": observation,
             "ocr_excerpt": ocr_excerpt[:500],
             "detections": formatted,
+            "status": perception_status,
         }
 
     def _execute_plan(self, plan: List[Dict[str, Any]]) -> None:
@@ -278,6 +394,7 @@ class EveBot:
                 self._do_mining_routine(screen)
 
             reward = self.env._compute_reward()
+            self._last_reward = self._clip_numeric(reward)
             if self.reward_label:
                 self.reward_label.setText(f"Reward: {reward:.2f}")
             time.sleep(0.2)
@@ -286,41 +403,35 @@ class EveBot:
         self.log("⛏ Mining routine tick")
 
         # 0. HOSTILE CHECK
-        if self.mining.detect_hostiles(screen):
+        hostiles_present = self._scan_hostiles(screen)
+        if hostiles_present:
             self.log("⚠️ Hostiles detected")
 
         # 1. CARGO HOLD CHECK
-        cargo_box = self.rh.load("mining_cargo_hold_capacity")
-        if cargo_box:
-            x1, y1, x2, y2 = cargo_box
-            crop = screen[y1:y2, x1:x2]
-            text = self.ocr.extract_text(crop)
-            match = re.search(r"(\d+)", text)
-            if match:
-                pct = int(match.group(1))
-                self.log(f"📦 Cargo: {pct}%")
-                if pct >= 90:
-                    self.log("🚀 Cargo full, docking...")
-                    self.fsm.on_event(Event.DOCK)
-                    self.mining.warp_to_station()
-                    self.mining.dock_or_undock(dock=True)
-                    return
+        cargo_pct = self._scan_cargo_status(screen)
+        if cargo_pct is not None:
+            cargo_pct = int(self._clip_numeric(cargo_pct, 0.0, 100.0))
+            self.log(f"📦 Cargo: {cargo_pct}%")
+            if cargo_pct >= 90:
+                self.log("🚀 Cargo full, docking...")
+                self.fsm.on_event(Event.DOCK)
+                self.mining.warp_to_station()
+                self.mining.dock_or_undock(dock=True)
+                return
 
         # 2. LASER MODULES
+        module_activity = self._scan_module_activity(screen)
         slots = ["module_slot1", "module_slot2", "module_slot3"]
-        active = False
-        for slot in slots:
-            box = self.rh.load(slot)
-            if box:
-                x1, y1, x2, y2 = box
-                if self.cv.is_module_active(screen[y1:y2, x1:x2]):
-                    active = True
-                    break
+        active = bool(module_activity and module_activity.get("any_active"))
 
         if not active:
             self.log("🔄 Mining lasers inactive → activating")
             for slot in slots:
-                box = self.rh.load(slot)
+                box = None
+                if module_activity and slot in module_activity.get("slots", {}):
+                    box = module_activity["slots"][slot].get("box")
+                if box is None:
+                    box = self.rh.load(slot)
                 if box:
                     x1, y1, x2, y2 = box
                     self.ui.click((x1 + x2) // 2, (y1 + y2) // 2)
@@ -329,11 +440,7 @@ class EveBot:
             return
 
         # 3. TARGET LOCK
-        locked = False
-        box = self.rh.load("is_target_locked")
-        if box:
-            x1, y1, x2, y2 = box
-            locked = self.cv.detect_target_lock(screen[y1:y2, x1:x2])
+        locked = self._scan_target_status(screen)
 
         if not locked:
             self.log("🔎 No target locked — acquiring new asteroid")
