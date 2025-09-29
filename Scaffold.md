@@ -1,5 +1,5 @@
 # EVE Online Bot Project Scaffold
-# version: 0.4.1
+# version: 0.5.0
 # path: Scaffold.md
 
 ---
@@ -7,24 +7,25 @@
 ## Directory Structure
 ```
 BAgent/
-├── README.md           # version: 0.3.7 | path: README.md
+├── README.md           # version: 0.4.0 | path: README.md
 ├── src/
 │   ├── __init__.py       # version: 0.1.0 | path: src/__init__.py
 │   ├── bot_core.py       # version: 0.6.2 | path: src/bot_core.py
-│   ├── env.py            # version: 0.4.9 | path: src/env.py
+│   ├── env.py            # version: 0.5.0 | path: src/env.py
 │   ├── agent.py          # version: 0.5.2 | path: src/agent.py
 │   ├── ocr.py            # version: 0.3.7 | path: src/ocr.py
-│   ├── cv.py             # version: 0.3.5 | path: src/cv.py
+│   ├── cv.py             # version: 0.4.0 | path: src/cv.py
+│   ├── detector.py       # version: 0.1.0 | path: src/detector.py
 │   ├── ui.py             # version: 0.4.2 | path: src/ui.py
 │   ├── capture_utils.py  # version: 0.8.5 | path: src/capture_utils.py
 │   ├── logger.py         # version: 0.1.0 | path: src/logger.py
 │   ├── roi_capture.py    # version: 0.2.5 | path: src/roi_capture.py
-│   ├── mining_actions.py # version: 0.1.2 | path: src/mining_actions.py
+│   ├── mining_actions.py # version: 0.2.0 | path: src/mining_actions.py
 │   ├── ocr_finetune.py   # version: 0.1.0 | path: src/ocr_finetune.py
 │   ├── roi_live_overlay.py # version: 0.3.1 | path: src/roi_live_overlay.py
 │   ├── state_machine.py  # version: 0.2.0 | path: src/state_machine.py
 │   ├── config/
-│   │   ├── agent_config.yaml # version: 0.1.0 | path: src/config/agent_config.yaml
+│   │   ├── agent_config.yaml # version: 0.2.0 | path: src/config/agent_config.yaml
 │   │   └── pilot_name.txt    # version: 0.1.0 | path: src/config/pilot_name.txt
 │   └── roi_screenshots/  # ROI screenshot samples
 ├── env.py               # version: 0.1.0 | path: env.py
@@ -42,11 +43,11 @@ BAgent/
 ├── ets.txt               # sample training commands
 ├── promts.txt            # project prompts and notes
 ├── regions.yaml          # saved ROI definitions
-├── requirements.txt      # version: 0.2.0 | path: requirements.txt
-├── test_env.py           # version: 0.1.1 | path: test_env.py
+├── requirements.txt      # version: 0.3.0 | path: requirements.txt
+├── test_env.py           # version: 0.2.0 | path: test_env.py
 ├── tests/                # test suite
 │   ├── test_capture_utils.py      # version: 0.1.0 | path: tests/test_capture_utils.py
-│   ├── test_env_actions.py        # version: 0.1.0 | path: tests/test_env_actions.py
+│   ├── test_env_actions.py        # version: 0.2.0 | path: tests/test_env_actions.py
 │   ├── test_gui_cli_integration.py # version: 0.1.0 | path: tests/test_gui_cli_integration.py
 │   ├── test_region_handler.py     # version: 0.1.0 | path: tests/test_region_handler.py
 │   └── test_replay_session.py     # version: 0.1.0 | path: tests/test_replay_session.py
@@ -64,8 +65,17 @@ BAgent/
     chosen method. ROI capture (`roi_capture.py`), GUI in `bot_core.py`.
   - Dynamic ROI types (click/text/detect) and auto-generated action space in `env.py`.  
 - **Environment Enhancements:**
-  - Dynamic ROI loading, text & detection regions, cargo capacity parsing.  
-  - Expanded action set from EVE-Master internal nodes.  
+  - Dynamic ROI loading, text & detection regions, cargo capacity parsing.
+  - Expanded action set from EVE-Master internal nodes.
+- **Vision Pipeline:**
+  - `CvEngine.detect_elements` now defers to an ONNX-backed YOLOv8 detector
+    (`src/detector.py`), returning bounding boxes and confidences.
+  - `EveEnv` consumes detector class labels (configured via
+    `detector.reward_labels`) for observations and rewards, with
+    per-ROI label overrides in `src/config/agent_config.yaml` and
+    `src/regions.yaml`.
+  - Template matching remains available as a fallback when the ONNX model is
+    missing.
 - **Data & Training Pipeline:**
   - `data_recorder.py` supports manual/automatic demo collection and can be
     stopped with the **End** key.
@@ -93,7 +103,8 @@ BAgent/
 ## Next Steps
 
 1. **Capture & Validate ROIs** for all new regions using `roi_capture.py`.
-2. **Template Preparation** for `detect`-type ROIs in `templates/`.
+2. **Detector Labeling**: capture or update `detect`-type ROIs with the
+   desired YOLO class labels and ensure `detector.class_names` covers them.
 3. **Reward Tuning & Logging**: refine `_compute_reward` weights and add metrics.
 4. **Complete Agent Module** with decision logic and automated action recording.
 5. **Expand Gym Environment** for complex mission scenarios.

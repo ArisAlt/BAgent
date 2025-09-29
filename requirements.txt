@@ -1,4 +1,4 @@
-# version: 0.2.0
+# version: 0.3.0
 # path: requirements.txt
 
 numpy
@@ -6,6 +6,7 @@ pillow
 pyautogui
 paddleocr
 opencv-python
+onnxruntime
 PySide6
 gym
 stable-baselines3

@@ -1,4 +1,4 @@
-# version: 0.4.9
+# version: 0.5.0
 # path: src/env.py
 
 try:
@@ -30,6 +30,7 @@ except Exception:  # pragma: no cover - allow import without gym
 
     spaces = types.SimpleNamespace(Discrete=DummyDiscrete, Box=DummyBox)
 import numpy as np
+from typing import Dict, Iterable, Optional, Set, Tuple
 
 try:
     from .ocr import OcrEngine
@@ -52,6 +53,7 @@ except Exception:  # pragma: no cover - allow tests without OpenCV
 from .ui import Ui
 from .roi_capture import RegionHandler
 from .config import get_window_title
+from .detector import load_detector_settings, map_roi_labels
 
 
 class EveEnv(gym.Env):
@@ -71,6 +73,7 @@ class EveEnv(gym.Env):
             self.cv = CvEngine()
         self.ui = Ui(window_title=window_title)
         self.region_handler = RegionHandler()
+        self.detector_cfg = load_detector_settings()
 
         # Load all ROI names from YAML
         all_rois = self.region_handler.list_regions()
@@ -131,7 +134,12 @@ class EveEnv(gym.Env):
         img = self.ui.capture()
         # Basic features: OCR text length, number of detect elements
         text_full = self.ocr.extract_text(img)
-        elems = self.cv.detect_elements(img, templates=self._load_templates())
+        targets = self._load_templates()
+        elems = self.cv.detect_elements(
+            img,
+            templates=targets,
+            threshold=self._detector_threshold(),
+        )
         base_feats = [len(text_full), len(elems)]
         # Text ROI readings
         text_vals = []
@@ -151,8 +159,52 @@ class EveEnv(gym.Env):
         return vec
 
     def _load_templates(self):
-        # Only detect actions for detect_rois
-        return {name: f"templates/{name}.png" for name in self.detect_rois}
+        entries = getattr(self.region_handler, "regions", {})
+        label_map = map_roi_labels(self.detect_rois, entries, self.detector_cfg)
+        override_map = (
+            self.detector_cfg.get("roi_map", {})
+            if isinstance(self.detector_cfg, dict)
+            else {}
+        )
+        targets = {}
+        for name in self.detect_rois:
+            coords = self.region_handler.get_coords(name)
+            override = override_map.get(name, {}) if isinstance(override_map, dict) else {}
+            roi_override = override.get("roi") if isinstance(override, dict) else None
+            roi_coords: Optional[Tuple[int, int, int, int]] = None
+            source_coords = roi_override or coords
+            if isinstance(source_coords, (list, tuple)) and len(source_coords) == 4:
+                roi_coords = tuple(int(v) for v in source_coords)
+            labels = label_map.get(name, {}).get("labels") if label_map else None
+            if labels:
+                labels = [str(v) for v in labels]
+            target_entry: Dict[str, object] = {
+                "roi": roi_coords,
+                "labels": labels,
+            }
+            template_path = override.get("template") if isinstance(override, dict) else None
+            if template_path:
+                target_entry["template"] = template_path
+            targets[name] = target_entry
+        return targets
+
+    def _detector_threshold(self) -> float:
+        if isinstance(self.detector_cfg, dict):
+            try:
+                return float(self.detector_cfg.get("default_threshold", 0.25))
+            except (TypeError, ValueError):
+                pass
+        return 0.25
+
+    def _reward_labels(self, key: str, default: Iterable[str]) -> Set[str]:
+        labels = {str(v) for v in default}
+        if isinstance(self.detector_cfg, dict):
+            reward_cfg = self.detector_cfg.get("reward_labels", {})
+            if isinstance(reward_cfg, dict):
+                cfg_labels = reward_cfg.get(key)
+                if isinstance(cfg_labels, (list, tuple, set)):
+                    labels = {str(v) for v in cfg_labels}
+        return labels
 
     def _action_to_command(self, action):
         cmd_type, target = self.actions[action]
@@ -182,8 +234,13 @@ class EveEnv(gym.Env):
         reward = 0.0
         img = self.ui.capture()
         # Detect mining
-        detect = self.cv.detect_elements(img, templates=self._load_templates())
-        if any(e["name"] == "mining_laser_on" for e in detect):
+        detect = self.cv.detect_elements(
+            img,
+            templates=self._load_templates(),
+            threshold=self._detector_threshold(),
+        )
+        labels = {str(d.get("name")) for d in detect if d.get("name")}
+        if labels & self._reward_labels("mine_active", ["mining_laser_on"]):
             reward += self.reward_config["mine_active"]
         # Cargo
         vol, _ = self._read_cargo_capacity()
@@ -193,7 +250,7 @@ class EveEnv(gym.Env):
             reward += self.reward_config["cargo_full"]
         self.prev_volume = vol
         # Hostile
-        if any(e["name"] == "hostile_alert" for e in detect):
+        if labels & self._reward_labels("hostile_penalty", ["hostile_alert"]):
             reward += self.reward_config["hostile_penalty"]
         return reward
 

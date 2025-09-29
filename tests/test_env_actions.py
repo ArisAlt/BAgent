@@ -1,4 +1,4 @@
-# version: 0.1.0
+# version: 0.2.0
 # path: tests/test_env_actions.py
 import os
 import sys
@@ -33,10 +33,15 @@ def test_actions_consistency(monkeypatch):
 
     cv_mod = types.ModuleType('cv')
     class DummyCvEngine:
-        def detect_elements(self, img, templates=None, threshold=0.8, multi_scale=False, scales=None):
+        def detect_elements(self, *args, **kwargs):
             return []
     cv_mod.CvEngine = DummyCvEngine
     monkeypatch.setitem(sys.modules, 'cv', cv_mod)
+
+    det_mod = types.ModuleType('detector')
+    det_mod.load_detector_settings = lambda config_data=None: {}
+    det_mod.map_roi_labels = lambda names, entries, cfg=None: {name: {"labels": []} for name in names}
+    monkeypatch.setitem(sys.modules, 'detector', det_mod)
 
     ui_mod = types.ModuleType('ui')
     class DummyUi:
@@ -54,6 +59,7 @@ def test_actions_consistency(monkeypatch):
         YAML_FILENAME = 'regions.yaml'
         def __init__(self, yaml_path=None):
             self.yaml_path = yaml_path
+            self.regions = {}
         def list_regions(self):
             return []
         def get_type(self, name):
