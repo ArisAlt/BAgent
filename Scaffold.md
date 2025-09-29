@@ -7,12 +7,12 @@
 ## Directory Structure
 ```
 BAgent/
-├── README.md           # version: 0.7.0 | path: README.md
+├── README.md           # version: 0.7.1 | path: README.md
 ├── src/
 │   ├── __init__.py       # version: 0.1.0 | path: src/__init__.py
 │   ├── bot_core.py       # version: 0.9.0 | path: src/bot_core.py
 │   ├── env.py            # version: 0.5.0 | path: src/env.py
-│   ├── agent.py          # version: 0.5.2 | path: src/agent.py
+│   ├── agent.py          # version: 0.5.3 | path: src/agent.py
 │   ├── ocr.py            # version: 0.3.7 | path: src/ocr.py
 │   ├── cv.py             # version: 0.4.0 | path: src/cv.py
 │   ├── detector.py       # version: 0.1.0 | path: src/detector.py

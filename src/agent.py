@@ -1,4 +1,4 @@
-# version: 0.5.2
+# version: 0.5.3
 # path: src/agent.py
 
 import os
@@ -21,6 +21,7 @@ from .capture_utils import capture_screen
 from .roi_capture import RegionHandler
 from .state_machine import State, Event
 from .env import EveEnv
+from .ocr import OcrEngine
 
 
 class BCPolicy(nn.Module):
