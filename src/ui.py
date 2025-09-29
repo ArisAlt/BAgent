@@ -1,4 +1,4 @@
-# version: 0.5.0
+# version: 0.6.0
 # path: src/ui.py
 
 import pyautogui
@@ -6,11 +6,297 @@ import numpy as np
 import time
 import threading
 import random
-from typing import Any, Dict, Iterable, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from .capture_utils import capture_screen
 from .roi_capture import RegionHandler
 from .config import get_window_title
+
+
+COMMAND_SCHEMA: List[Dict[str, Any]] = [
+    {
+        "type": "click",
+        "aliases": ["left_click", "right_click", "double_click", "coordinate_click", "click_coords"],
+        "description": "Move the cursor (optionally with jitter) and press the specified mouse button one or more times.",
+        "parameters": [
+            {
+                "name": "x",
+                "type": "float",
+                "description": "Screen X coordinate. Required if 'roi' is not provided.",
+            },
+            {
+                "name": "y",
+                "type": "float",
+                "description": "Screen Y coordinate. Required if 'roi' is not provided.",
+            },
+            {
+                "name": "roi",
+                "type": "str",
+                "description": "Named region to resolve to a centre point instead of coordinates.",
+            },
+            {
+                "name": "duration",
+                "type": "float",
+                "description": "Seconds to move before clicking (default 0.1).",
+            },
+            {
+                "name": "jitter",
+                "type": "int",
+                "description": "Random pixel jitter applied to the destination (default 5).",
+            },
+            {
+                "name": "button",
+                "type": "str",
+                "description": "Mouse button to use ('left' or 'right'). Defaults by command type.",
+            },
+            {
+                "name": "clicks",
+                "type": "int",
+                "description": "Number of click repetitions (double_click defaults to 2).",
+            },
+            {
+                "name": "interval",
+                "type": "float",
+                "description": "Delay between multi-clicks (default 0.05).",
+            },
+        ],
+    },
+    {
+        "type": "move",
+        "aliases": ["move_to"],
+        "description": "Move the mouse cursor without clicking.",
+        "parameters": [
+            {
+                "name": "x",
+                "type": "float",
+                "description": "Screen X coordinate. Required if 'roi' is not provided.",
+            },
+            {
+                "name": "y",
+                "type": "float",
+                "description": "Screen Y coordinate. Required if 'roi' is not provided.",
+            },
+            {
+                "name": "roi",
+                "type": "str",
+                "description": "Named region to resolve to a centre point instead of coordinates.",
+            },
+            {
+                "name": "duration",
+                "type": "float",
+                "description": "Seconds to complete the move (default 0.1).",
+            },
+        ],
+    },
+    {
+        "type": "drag",
+        "description": "Click-and-drag to a destination. Optionally move to a start point first.",
+        "parameters": [
+            {
+                "name": "x",
+                "type": "float",
+                "description": "Destination X coordinate. Required if 'roi' is not provided.",
+            },
+            {
+                "name": "y",
+                "type": "float",
+                "description": "Destination Y coordinate. Required if 'roi' is not provided.",
+            },
+            {
+                "name": "roi",
+                "type": "str",
+                "description": "Destination ROI name to centre on.",
+            },
+            {
+                "name": "start",
+                "type": "[float, float]",
+                "description": "Optional [x, y] pair for the drag start position before pressing down.",
+            },
+            {
+                "name": "pre_move",
+                "type": "float",
+                "description": "Seconds used when moving to the start position (default 0.1).",
+            },
+            {
+                "name": "duration",
+                "type": "float",
+                "description": "Seconds to complete the drag (default 0.2).",
+            },
+            {
+                "name": "button",
+                "type": "str",
+                "description": "Mouse button to hold during the drag (default 'left').",
+            },
+        ],
+    },
+    {
+        "type": "keypress",
+        "aliases": ["key_press", "press"],
+        "description": "Press and release a single key.",
+        "parameters": [
+            {
+                "name": "key",
+                "type": "str",
+                "description": "Key name (required for generic keypress commands).",
+            },
+            {
+                "name": "duration",
+                "type": "float",
+                "description": "Seconds to hold the key before release (default 0.1).",
+            },
+        ],
+    },
+    {
+        "type": "enter",
+        "aliases": ["return"],
+        "description": "Press the Enter/Return key without requiring a 'key' parameter.",
+        "parameters": [
+            {
+                "name": "duration",
+                "type": "float",
+                "description": "Seconds to hold the key before release (default 0.1).",
+            }
+        ],
+    },
+    {
+        "type": "key_down",
+        "aliases": ["keydown"],
+        "description": "Hold a key down until a matching key_up is issued.",
+        "parameters": [
+            {"name": "key", "type": "str", "description": "Key name to hold."}
+        ],
+    },
+    {
+        "type": "key_up",
+        "aliases": ["keyup"],
+        "description": "Release a key previously held with key_down.",
+        "parameters": [
+            {"name": "key", "type": "str", "description": "Key name to release."}
+        ],
+    },
+    {
+        "type": "hotkey",
+        "description": "Press a combination of keys in sequence (e.g., ctrl+s).",
+        "parameters": [
+            {
+                "name": "keys",
+                "type": "List[str]",
+                "description": "Ordered keys to press (required).",
+            },
+            {
+                "name": "interval",
+                "type": "float",
+                "description": "Delay between key presses (default 0).",
+            },
+        ],
+    },
+    {
+        "type": "type",
+        "aliases": ["typewrite", "text"],
+        "description": "Type literal text.",
+        "parameters": [
+            {
+                "name": "text",
+                "type": "str",
+                "description": "Text to type (required).",
+            },
+            {
+                "name": "interval",
+                "type": "float",
+                "description": "Delay between characters (default 0.05).",
+            },
+        ],
+    },
+    {
+        "type": "scroll",
+        "aliases": ["mouse_scroll"],
+        "description": "Scroll the mouse wheel.",
+        "parameters": [
+            {
+                "name": "amount",
+                "type": "int",
+                "description": "Positive scrolls up, negative scrolls down (required).",
+            }
+        ],
+    },
+    {
+        "type": "sleep",
+        "aliases": ["wait", "delay"],
+        "description": "Pause for a duration of time (random jitter applied).",
+        "parameters": [
+            {
+                "name": "duration",
+                "type": "float",
+                "description": "Seconds to wait (preferred field).",
+            },
+            {
+                "name": "seconds",
+                "type": "float",
+                "description": "Alternative field for wait duration.",
+            },
+        ],
+    },
+    {
+        "type": "switch_region",
+        "description": "Load a saved capture region to crop subsequent screenshots.",
+        "parameters": [
+            {
+                "name": "region_name",
+                "type": "str",
+                "description": "Named capture region to load. 'region' is accepted as an alias field.",
+            }
+        ],
+    },
+    {
+        "type": "sequence",
+        "description": "Execute a nested list of sub-actions in order.",
+        "parameters": [
+            {
+                "name": "actions",
+                "type": "List[Dict]",
+                "description": "Inline list of action objects to execute sequentially.",
+            }
+        ],
+    },
+    {
+        "type": "noop",
+        "description": "Do nothing (used as a placeholder).",
+        "parameters": [],
+    },
+]
+
+
+def summarise_command_schema(schema: Optional[List[Dict[str, Any]]] = None) -> str:
+    """Return a human-readable summary of the supported command schema."""
+
+    schema = schema or COMMAND_SCHEMA
+    lines: List[str] = []
+    for entry in schema:
+        type_name = entry.get("type", "")
+        if not type_name:
+            continue
+        aliases = entry.get("aliases") or []
+        alias_text = f" (aliases: {', '.join(aliases)})" if aliases else ""
+        description = entry.get("description") or ""
+        lines.append(f"- {type_name}{alias_text}: {description}")
+        params = entry.get("parameters") or []
+        if params:
+            param_bits = []
+            for param in params:
+                name = param.get("name")
+                if not name:
+                    continue
+                type_hint = param.get("type")
+                desc = param.get("description")
+                segment = name
+                if type_hint:
+                    segment += f" ({type_hint})"
+                if desc:
+                    segment += f" – {desc}"
+                param_bits.append(segment)
+            if param_bits:
+                lines.append("  params: " + "; ".join(param_bits))
+    return "\n".join(lines)
 
 class Ui:
     def __init__(self, capture_region=None, window_title=None):

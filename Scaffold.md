@@ -1,5 +1,5 @@
 # EVE Online Bot Project Scaffold
-# version: 0.7.0
+# version: 0.8.0
 # path: Scaffold.md
 
 ---
@@ -7,16 +7,16 @@
 ## Directory Structure
 ```
 BAgent/
-├── README.md           # version: 0.6.0 | path: README.md
+├── README.md           # version: 0.7.0 | path: README.md
 ├── src/
 │   ├── __init__.py       # version: 0.1.0 | path: src/__init__.py
-│   ├── bot_core.py       # version: 0.8.0 | path: src/bot_core.py
+│   ├── bot_core.py       # version: 0.9.0 | path: src/bot_core.py
 │   ├── env.py            # version: 0.5.0 | path: src/env.py
 │   ├── agent.py          # version: 0.5.2 | path: src/agent.py
 │   ├── ocr.py            # version: 0.3.7 | path: src/ocr.py
 │   ├── cv.py             # version: 0.4.0 | path: src/cv.py
 │   ├── detector.py       # version: 0.1.0 | path: src/detector.py
-│   ├── ui.py             # version: 0.5.0 | path: src/ui.py
+│   ├── ui.py             # version: 0.6.0 | path: src/ui.py
 │   ├── capture_utils.py  # version: 0.8.5 | path: src/capture_utils.py
 │   ├── logger.py         # version: 0.1.0 | path: src/logger.py
 │   ├── roi_capture.py    # version: 0.2.5 | path: src/roi_capture.py
@@ -24,7 +24,7 @@ BAgent/
 │   ├── ocr_finetune.py   # version: 0.1.0 | path: src/ocr_finetune.py
 │   ├── roi_live_overlay.py # version: 0.3.1 | path: src/roi_live_overlay.py
 │   ├── state_machine.py  # version: 0.2.0 | path: src/state_machine.py
-│   ├── llm_client.py     # version: 0.1.0 | path: src/llm_client.py
+│   ├── llm_client.py     # version: 0.2.0 | path: src/llm_client.py
 │   ├── config/
 │   │   ├── agent_config.yaml # version: 0.3.0 | path: src/config/agent_config.yaml
 │   │   └── pilot_name.txt    # version: 0.1.0 | path: src/config/pilot_name.txt
@@ -81,6 +81,10 @@ BAgent/
   - `src/llm_client.py` posts perception snapshots (observations, OCR, YOLO detections,
     and a structured status block with cargo %, module activity, hostiles, target lock,
     and recent rewards) to a local LM Studio server and parses JSON action plans.
+  - Perception now bundles a `capabilities` payload enumerating valid ROI identifiers,
+    hotkey names, and the UI command schema so planners can align actions with
+    supported affordances. The default system prompt embeds the same schema and may
+    be overridden via `llm.system_prompt`.
   - `EveBot` can execute LLM-provided actions via the GUI (`--llm-planning` CLI
     flag or the `llm.enabled` configuration) and falls back to the mining
     routine if the request fails.
