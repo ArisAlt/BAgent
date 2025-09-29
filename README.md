@@ -1,5 +1,5 @@
 # BAgent
-# version: 0.7.0
+# version: 0.7.1
 # path: README.md
 
 
@@ -24,7 +24,9 @@ Modules such as `roi_capture` now insert their folder into `sys.path` before
 importing sibling modules. Similarly, `src/agent.py` adds the project root to
 `sys.path` so it can import `pre_train_data` even when scripts are launched from
 within the `src` directory. These tweaks prevent `ModuleNotFoundError` when the
-wrappers are used without modifying `PYTHONPATH`.
+wrappers are used without modifying `PYTHONPATH`. The `AIPilot` class now
+imports `OcrEngine` directly from `src/ocr.py`, ensuring the default OCR
+provider is available without requiring callers to pass an instance explicitly.
 Recent updates switched intra-package imports to explicit relative form
 (`from .ocr import OcrEngine`, etc.). If you encounter `ModuleNotFoundError`
 for modules like `ocr`, ensure you're running commands from the repository root
