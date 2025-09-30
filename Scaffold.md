@@ -1,5 +1,5 @@
 # EVE Online Bot Project Scaffold
-# version: 0.8.0
+# version: 0.8.1
 # path: Scaffold.md
 
 ---
@@ -7,7 +7,7 @@
 ## Directory Structure
 ```
 BAgent/
-├── README.md           # version: 0.7.1 | path: README.md
+├── README.md           # version: 0.7.2 | path: README.md
 ├── src/
 │   ├── __init__.py       # version: 0.1.0 | path: src/__init__.py
 │   ├── bot_core.py       # version: 0.9.0 | path: src/bot_core.py
@@ -40,6 +40,8 @@ BAgent/
 ├── pre_train_data.py     # version: 0.3.0 | path: pre_train_data.py
 ├── replay_session.py     # version: 0.3.0 | path: replay_session.py
 ├── replay_correction.py     # version: 0.1.0 | path: replay_correction.py
+├── search.py            # version: 0.1.0 | path: search.py
+├── tag.py               # version: 0.1.0 | path: tag.py
 ├── add_tesseract_to_path.bat # helper script to set PATH on Windows
 ├── ets.txt               # sample training commands
 ├── promts.txt            # project prompts and notes
@@ -60,57 +62,11 @@ BAgent/
 
 ## Recent Changes Summary
 
-- **Modularization & Tooling:**
-  - Screen capture (`capture_utils.py`) now prioritizes `mss` window grabs before
-    falling back to `PrintWindow`, `pyautogui`, or `ImageGrab`, with logs noting the
-    chosen method. ROI capture (`roi_capture.py`), GUI in `bot_core.py`.
-  - Dynamic ROI types (click/text/detect) and auto-generated action space in `env.py`.  
-- **Environment Enhancements:**
-  - Dynamic ROI loading, text & detection regions, cargo capacity parsing.
-  - Expanded action set from EVE-Master internal nodes.
-- **Vision Pipeline:**
-  - `CvEngine.detect_elements` now defers to an ONNX-backed YOLOv8 detector
-    (`src/detector.py`), returning bounding boxes and confidences.
-  - `EveEnv` consumes detector class labels (configured via
-    `detector.reward_labels`) for observations and rewards, with
-    per-ROI label overrides in `src/config/agent_config.yaml` and
-    `src/regions.yaml`.
-  - Template matching remains available as a fallback when the ONNX model is
-    missing.
-- **LLM Planning:**
-  - `src/llm_client.py` posts perception snapshots (observations, OCR, YOLO detections,
-    and a structured status block with cargo %, module activity, hostiles, target lock,
-    and recent rewards) to a local LM Studio server and parses JSON action plans.
-  - Perception now bundles a `capabilities` payload enumerating valid ROI identifiers,
-    hotkey names, and the UI command schema so planners can align actions with
-    supported affordances. The default system prompt embeds the same schema and may
-    be overridden via `llm.system_prompt`.
-  - `EveBot` can execute LLM-provided actions via the GUI (`--llm-planning` CLI
-    flag or the `llm.enabled` configuration) and falls back to the mining
-    routine if the request fails.
-  - `Ui.execute` now supports coordinate clicks, drags, hotkeys, typing, and
-    other rich commands under a thread-safe UI lock.
-- **Data & Training Pipeline:**
-  - `data_recorder.py` supports manual/automatic demo collection and can be
-    stopped with the **End** key.
-  - Optional `--window-title` selects the EVE window (default is read from `src/config/pilot_name.txt`).
-  - Tools for dataset generation and preprocessing.
-  - CLI entry via `run_start.py` and PySide6 GUI support. Project dependencies now
-    include `mss` (and `pywin32` for Windows capture fallbacks) via `requirements.txt`.
-  - `agent.py` provides BC training (`train_bc_from_data`) and inference (`load_and_predict`).
-  - `bot_core.py` can run BC models via `--mode bc_inference`.
-  - `replay_session.py` visualizes demonstrations and outputs accuracy and confusion metrics.
-  - `bot_core.py` now supports Auto, Manual and Assistive modes toggled by F1-F3, with F4 confirming suggestions.
-  - `replay_correction.py` allows correcting actions during replay and marks samples with higher weight.
-  - `pre_train_data.py` now standardizes observations with `StandardScaler`
-    and creates validation splits via `train_test_split` before training the PyTorch model.
-  - `agent.py` prepends the project root to `sys.path` so `pre_train_data` can
-    be imported when running modules from the `src` directory.
-  - Imports within `src` are now relative (e.g. `from .ocr import OcrEngine`) to
-    avoid `ModuleNotFoundError` when executing scripts directly.
-- **Testing & Validation:**
-  - `test_env.py` for quick ROI and env step sanity checks.
-  - `test_gui_cli_integration.py` exercises ROI/UI functionality via the GUI and CLI.
+- **Log Tooling:**
+  - Added `search.py` for structured searching across JSONL demonstration logs with
+    substring, regex, or callable predicates and optional nested field selectors.
+  - Introduced `tag.py` with a `TagStore` utility to normalise, deduplicate, and persist
+    metadata tags for recorded sessions.
 
 ---
 

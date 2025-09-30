@@ -1,5 +1,5 @@
 # BAgent
-# version: 0.7.1
+# version: 0.7.2
 # path: README.md
 
 
@@ -292,6 +292,33 @@ If Tesseract is not on your `PATH`, provide the path via `--tesseract-cmd` or
 set the `TESSERACT_CMD` environment variable. Windows users can run
 `add_tesseract_to_path.bat` with administrator rights to add Tesseract to
 `PATH` and set the `TESSERACT_CMD` variable automatically.
+
+## Log Search & Tagging Utilities
+
+Two lightweight helper modules simplify working with demonstration logs and
+metadata outside of the main training pipeline:
+
+- `search.py` exposes `search_in_file` and `search_paths` for filtering JSONL or
+  plain-text logs using substring queries, regular expressions, or custom
+  predicates. Optional `fields` selectors enable targeting nested JSON keys
+  while keeping the API simple for scripts and notebooks.
+- `tag.py` provides the `TagStore` class for maintaining a stable mapping of log
+  identifiers to tags. Tags are normalised, deduplicated, and stored in a
+  consistent order; persistence helpers (`save`, `load_tag_store`) read and
+  write JSON files under `logs/`.
+
+Example usage:
+
+```python
+from search import search_in_file
+from tag import TagStore
+
+matches = search_in_file("logs/demonstrations/log_20250612_180024.jsonl", "warp")
+store = TagStore()
+for match in matches:
+    store.add(match.entry.get("id", match.line_number), "warp")
+store.save("logs/demonstrations/tags.json")
+```
 
 ### OCR Configuration
 
